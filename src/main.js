@@ -1,4 +1,3 @@
-// main.js
 import * as THREE from 'three';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
@@ -6,6 +5,7 @@ import { generateMaze } from './maze.js';
 import { Ghost } from './Ghost.js';
 import { CONFIG, OFFSET } from './config.js';
 import { Environment } from './Environment.js';
+import { CoinManager } from './CoinManager.js';
 
 // --- SETUP BASE ---
 const scene = new THREE.Scene();
@@ -18,6 +18,10 @@ renderer.xr.enabled = true;
 document.body.appendChild(renderer.domElement);
 document.body.appendChild(VRButton.createButton(renderer));
 
+// --- SETUP AUDIO GLOBALE ---
+const audioListener = new THREE.AudioListener();
+camera.add(audioListener);
+
 // --- GENERAZIONE MONDO ---
 const levelMap = generateMaze(CONFIG.MAP_SIZE, CONFIG.MAP_SIZE);
 const environment = new Environment(scene, levelMap);
@@ -29,7 +33,7 @@ for (let z = 0; z < levelMap.length; z++) {
         if (levelMap[z][x] === 2 && ghosts.length < 4) {
             const worldX = (x + OFFSET.X) * CONFIG.CELL_SIZE;
             const worldZ = (z + OFFSET.Z) * CONFIG.CELL_SIZE;
-            ghosts.push(new Ghost(scene, worldX, worldZ, CONFIG.CELL_SIZE, OFFSET.X, OFFSET.Z, levelMap));
+            ghosts.push(new Ghost(scene, worldX, worldZ, CONFIG.CELL_SIZE, OFFSET.X, OFFSET.Z, levelMap, audioListener));
         }
     }
 }
@@ -45,6 +49,9 @@ for (let z = levelMap.length - 2; z > 0; z--) {
         }
     }
 }
+
+// --- INITIALIZZAZIONE COIN MANAGER ---
+const coinManager = new CoinManager(scene, levelMap, audioListener, ghosts, camera.position);
 
 // --- CONTROLLI E INPUT ---
 const controls = new PointerLockControls(camera, document.body);
@@ -64,7 +71,7 @@ const handleKey = (code, isDown) => {
 document.addEventListener('keydown', (e) => handleKey(e.code, true));
 document.addEventListener('keyup', (e) => handleKey(e.code, false));
 
-// --- SISTEMA DI COLLISIONE (Globale) ---
+// --- SISTEMA DI COLLISIONE MAPPA ---
 function isColliding(x, z, radius = CONFIG.PLAYER_RADIUS) {
     const points = [
         { cx: x - radius, cz: z - radius },
@@ -112,11 +119,13 @@ function animate() {
         }
     }
 
-    // 2. Aggiornamento Uniformi per gli Shader
+    // 2. AGGIORNAMENTO LOGICA MONETE
+    coinManager.update(delta, camera.position);
+
+    // 3. Aggiornamento Uniformi per gli Shader e Logica Fantasmi
     environment.shaderUniforms.u_playerPosition.value.copy(camera.position);
 
     for (let i = 0; i < ghosts.length; i++) {
-        // Passiamo camera.position per il calcolo della visione
         ghosts[i].update(delta, camera.position);
         
         environment.shaderUniforms.u_ghostPositions.value[i].copy(ghosts[i].mesh.position);
