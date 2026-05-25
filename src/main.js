@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 import { generateMaze } from './maze.js';
-import { Ghost } from './ghost.js';
+import { Ghost } from './Ghost.js';
 import { CONFIG, OFFSET } from './config.js';
 import { Environment } from './Environment.js';
 
@@ -29,7 +29,7 @@ for (let z = 0; z < levelMap.length; z++) {
         if (levelMap[z][x] === 2 && ghosts.length < 4) {
             const worldX = (x + OFFSET.X) * CONFIG.CELL_SIZE;
             const worldZ = (z + OFFSET.Z) * CONFIG.CELL_SIZE;
-            ghosts.push(new Ghost(scene, worldX, worldZ, CONFIG.CELL_SIZE, OFFSET.X, OFFSET.Z));
+            ghosts.push(new Ghost(scene, worldX, worldZ, CONFIG.CELL_SIZE, OFFSET.X, OFFSET.Z, levelMap));
         }
     }
 }
@@ -116,10 +116,13 @@ function animate() {
     environment.shaderUniforms.u_playerPosition.value.copy(camera.position);
 
     for (let i = 0; i < ghosts.length; i++) {
-        ghosts[i].update(delta, isColliding);
+        // Passiamo camera.position per il calcolo della visione
+        ghosts[i].update(delta, camera.position);
+        
         environment.shaderUniforms.u_ghostPositions.value[i].copy(ghosts[i].mesh.position);
         environment.shaderUniforms.u_ghostPositions.value[i].y += 0.2; 
-        environment.shaderUniforms.u_ghostDirections.value[i].copy(ghosts[i].direction);
+        environment.shaderUniforms.u_ghostDirections.value[i].copy(ghosts[i].getFacingDirection());
+        environment.shaderUniforms.u_ghostColors.value[i].copy(ghosts[i].lightColor);
     }
 
     renderer.render(scene, camera);

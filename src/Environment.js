@@ -17,8 +17,9 @@ export class Environment {
         return {
             u_ghostPositions: { value: Array(4).fill(null).map(() => new THREE.Vector3(0, -100, 0)) },
             u_ghostDirections: { value: Array(4).fill(null).map(() => new THREE.Vector3(0, 0, 1)) },
+            u_ghostColors: { value: Array(4).fill(null).map(() => new THREE.Color(0x00ffff)) },
             u_playerPosition: { value: new THREE.Vector3(0, 0, 0) },
-            u_mapTexture: { value: null }, // Assegnato in buildMapTexture
+            u_mapTexture: { value: null }, 
             u_mapSize: { value: CONFIG.MAP_SIZE },
             u_cellSize: { value: CONFIG.CELL_SIZE },
             u_gridOffset: { value: new THREE.Vector2(OFFSET.X, OFFSET.Z) }

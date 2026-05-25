@@ -12,6 +12,7 @@ export const fragmentShader = `
     uniform vec3 u_baseColor;
     uniform vec3 u_ghostPositions[4];
     uniform vec3 u_ghostDirections[4];
+    uniform vec3 u_ghostColors[4]; // AGGIUNTO IL COLORE
     uniform vec3 u_playerPosition;
     
     uniform sampler2D u_mapTexture;
@@ -50,15 +51,17 @@ export const fragmentShader = `
 
     void main() {
         vec3 finalColor = u_baseColor;
-        float addedLight = 0.0;
+        vec3 addedLight = vec3(0.0); // Ora addedLight è un vec3 (colore) e non un float
 
         float distToPlayer = length(vWorldPosition - u_playerPosition);
+        // La luce del giocatore resta bianca
         float playerAura = smoothstep(6.0, 0.0, distToPlayer) * 0.4; 
-        addedLight += playerAura;
+        addedLight += vec3(playerAura); 
 
         for(int i = 0; i < 4; i++) {
             vec3 ghostPos = u_ghostPositions[i];
             vec3 ghostDir = u_ghostDirections[i];
+            vec3 ghostColor = u_ghostColors[i]; // Prendi il colore specifico
             
             vec3 toPixel = vWorldPosition - ghostPos;
             float dist = length(toPixel);
@@ -71,13 +74,14 @@ export const fragmentShader = `
                     if (!isOccluded(vWorldPosition, ghostPos)) {
                         float intensity = smoothstep(25.0, 0.0, dist);
                         float angularIntensity = smoothstep(0.707, 0.75, angle);
-                        addedLight += intensity * angularIntensity * 0.8; 
+                        // Somma il colore del fantasma moltiplicato per l'intensità
+                        addedLight += ghostColor * intensity * angularIntensity * 0.8; 
                     }
                 }
             }
         }
 
-        finalColor = clamp(finalColor + vec3(addedLight), 0.0, 1.0);
+        finalColor = clamp(finalColor + addedLight, 0.0, 1.0);
         gl_FragColor = vec4(finalColor, 1.0);
     }
 `;
