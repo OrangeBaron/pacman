@@ -44,7 +44,7 @@ export class Weapon {
         return group;
     }
 
-    shoot(ghosts) {
+    shoot(ghosts, vrController = null) {
         if (!this.canShoot) return;
 
         // 1. Riproduci audio e applica cooldown
@@ -62,8 +62,20 @@ export class Weapon {
             this.mesh.rotation.x -= 0.1; 
         }, 100);
 
-        // 3. Raycasting: Controlla se abbiamo colpito un fantasma
-        this.raycaster.setFromCamera(this.centerScreen, this.camera);
+        // 3. Raycasting: Controlla da dove spariamo
+        if (vrController) {
+            // Modalità VR: estrai posizione e direzione dal controller VR
+            const position = new THREE.Vector3();
+            const direction = new THREE.Vector3(0, 0, -1);
+            
+            position.setFromMatrixPosition(vrController.matrixWorld);
+            direction.transformDirection(vrController.matrixWorld).normalize();
+            
+            this.raycaster.set(position, direction);
+        } else {
+            // Modalità Flat: spara dal centro della telecamera
+            this.raycaster.setFromCamera(this.centerScreen, this.camera);
+        }
         
         // Estraiamo le mesh dei fantasmi per il raycaster
         const ghostMeshes = ghosts.map(g => g.mesh);
@@ -80,8 +92,11 @@ export class Weapon {
         }
 
         // 4. PROPAGAZIONE DEL RUMORE
+        const worldPos = new THREE.Vector3();
+        this.camera.getWorldPosition(worldPos);
+
         ghosts.forEach(ghost => {
-            ghost.hearNoise(this.camera.position.x, this.camera.position.z, 100.0);
+            ghost.hearNoise(worldPos.x, worldPos.z, 100.0);
         });
     }
 }

@@ -3,16 +3,31 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
 import { CONFIG, OFFSET } from './config.js';
 
 export class Player {
-    constructor(camera, renderer, levelMap) {
+    constructor(camera, playerRig, renderer, levelMap, scene) {
         this.camera = camera;
+        this.playerRig = playerRig;
         this.renderer = renderer;
         this.levelMap = levelMap;
+        this.scene = scene;
         
         this.controls = new PointerLockControls(camera, document.body);
         this.moveState = { forward: false, backward: false, left: false, right: false };
         this.direction = new THREE.Vector3();
         
         this.initControls();
+        this.initVRControls(); 
+    }
+
+    initVRControls() {
+        this.controllers = [];
+        for (let i = 0; i < 2; i++) {
+            const controller = this.renderer.xr.getController(i);
+            controller.addEventListener('selectstart', () => {
+                if (this.weapon) this.isShooting = true;
+            });
+            this.scene.add(controller);
+            this.controllers.push(controller);
+        }
     }
 
     initControls() {
@@ -61,32 +76,54 @@ export class Player {
 
     update(delta, ghosts) {
         if (this.isShooting && this.weapon) {
-            this.weapon.shoot(ghosts);
+            const activeController = this.renderer.xr.isPresenting ? (this.controllers[1] || this.controllers[0]) : null;
+            this.weapon.shoot(ghosts, activeController);
             this.isShooting = false;
         }
 
+        let inputX = 0;
+        let inputZ = 0;
+
+        // 1. Leggi Input: Flat Mode o VR Mode
         if (!this.renderer.xr.isPresenting && this.controls.isLocked) {
-            this.direction.z = Number(this.moveState.forward) - Number(this.moveState.backward);
-            this.direction.x = Number(this.moveState.right) - Number(this.moveState.left);
-            this.direction.normalize();
-
-            if (this.direction.length() > 0) {
-                const forward = new THREE.Vector3();
-                this.camera.getWorldDirection(forward);
-                forward.y = 0; forward.normalize();
-
-                const right = new THREE.Vector3();
-                right.crossVectors(forward, this.camera.up).normalize();
-
-                const moveX = (forward.x * this.direction.z + right.x * this.direction.x) * CONFIG.PLAYER_SPEED * delta;
-                const moveZ = (forward.z * this.direction.z + right.z * this.direction.x) * CONFIG.PLAYER_SPEED * delta;
-
-                if (!this.isColliding(this.camera.position.x + moveX, this.camera.position.z)) {
-                    this.camera.position.x += moveX;
+            inputZ = Number(this.moveState.forward) - Number(this.moveState.backward);
+            inputX = Number(this.moveState.right) - Number(this.moveState.left);
+        } else if (this.renderer.xr.isPresenting) {
+            // Leggi le levette del controller VR
+            const session = this.renderer.xr.getSession();
+            if (session && session.inputSources) {
+                for (const source of session.inputSources) {
+                    if (source.gamepad && source.gamepad.axes.length >= 4) {
+                        const xAxis = source.gamepad.axes[2];
+                        const zAxis = source.gamepad.axes[3];
+                        
+                        if (Math.abs(xAxis) > 0.1) inputX = -xAxis; 
+                        if (Math.abs(zAxis) > 0.1) inputZ = -zAxis; 
+                    }
                 }
-                if (!this.isColliding(this.camera.position.x, this.camera.position.z + moveZ)) {
-                    this.camera.position.z += moveZ;
-                }
+            }
+        }
+
+        // 2. Applica Movimento
+        const dirVector = new THREE.Vector2(inputX, inputZ).normalize();
+        
+        if (dirVector.lengthSq() > 0) {
+            const forward = new THREE.Vector3();
+            this.camera.getWorldDirection(forward);
+            forward.y = 0; 
+            forward.normalize();
+
+            const right = new THREE.Vector3();
+            right.crossVectors(forward, this.camera.up).normalize();
+
+            const moveX = (forward.x * dirVector.y + right.x * dirVector.x) * CONFIG.PLAYER_SPEED * delta;
+            const moveZ = (forward.z * dirVector.y + right.z * dirVector.x) * CONFIG.PLAYER_SPEED * delta;
+
+            if (!this.isColliding(this.playerRig.position.x + moveX, this.playerRig.position.z)) {
+                this.playerRig.position.x += moveX;
+            }
+            if (!this.isColliding(this.playerRig.position.x, this.playerRig.position.z + moveZ)) {
+                this.playerRig.position.z += moveZ;
             }
         }
     }

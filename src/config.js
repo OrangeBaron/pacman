@@ -1,4 +1,3 @@
-// config.js
 export const CONFIG = {
     MAP_SIZE: 21,
     CELL_SIZE: 2.0,

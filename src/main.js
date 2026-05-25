@@ -19,6 +19,11 @@ renderer.xr.enabled = true;
 document.body.appendChild(renderer.domElement);
 document.body.appendChild(VRButton.createButton(renderer));
 
+// --- SETUP CAMERA RIG PER VR ---
+const playerRig = new THREE.Group();
+scene.add(playerRig);
+playerRig.add(camera);
+
 // --- SETUP AUDIO GLOBALE ---
 const audioListener = new THREE.AudioListener();
 camera.add(audioListener);
@@ -44,20 +49,25 @@ const levelMap = generateMaze(CONFIG.MAP_SIZE, CONFIG.MAP_SIZE);
 const environment = new Environment(scene, levelMap);
 
 // --- SPAWN GIOCATORE ---
-const player = new Player(camera, renderer, levelMap);
+const player = new Player(camera, playerRig, renderer, levelMap, scene);
 const weapon = new Weapon(camera, audioListener); 
 player.weapon = weapon;
-scene.add(camera);
+
 let spawned = false;
 for (let z = levelMap.length - 2; z > 0; z--) {
     for (let x = 1; x < levelMap[z].length; x++) {
         if (levelMap[z][x] === 0 && !spawned) {
-            camera.position.set((x + OFFSET.X) * CONFIG.CELL_SIZE, 1.6, (z + OFFSET.Z) * CONFIG.CELL_SIZE);
+            playerRig.position.set((x + OFFSET.X) * CONFIG.CELL_SIZE, 0, (z + OFFSET.Z) * CONFIG.CELL_SIZE);
+            camera.position.set(0, 1.6, 0);
             camera.lookAt(0, 1.6, 0); 
             spawned = true;
         }
     }
 }
+
+playerRig.updateMatrixWorld(true);
+const playerWorldPos = new THREE.Vector3();
+camera.getWorldPosition(playerWorldPos);
 
 // --- SPAWN FANTASMI ---
 const ghosts = [];
@@ -71,8 +81,8 @@ for (let z = 0; z < levelMap.length; z++) {
     }
 }
 
-// --- INITIALIZZAZIONE MANAGER ---
-const coinManager = new CoinManager(scene, levelMap, audioListener, ghosts, camera.position);
+// --- INIZIALIZZAZIONE MANAGER ---
+const coinManager = new CoinManager(scene, levelMap, audioListener, ghosts, playerWorldPos);
 
 // --- GAME LOOP ---
 const clock = new THREE.Clock();
@@ -81,14 +91,16 @@ function animate() {
     const delta = clock.getDelta();
 
     player.update(delta, ghosts);
-    coinManager.update(delta, camera.position);
+    
+    camera.getWorldPosition(playerWorldPos);
 
-    environment.shaderUniforms.u_playerPosition.value.copy(camera.position);
+    coinManager.update(delta, playerWorldPos);
+    environment.shaderUniforms.u_playerPosition.value.copy(playerWorldPos);
 
     let isAnyGhostHunting = false;
 
     for (let i = 0; i < ghosts.length; i++) {
-        ghosts[i].update(delta, camera.position);
+        ghosts[i].update(delta, playerWorldPos);
         
         if (ghosts[i].state === 'HUNT') isAnyGhostHunting = true;
         
@@ -98,6 +110,7 @@ function animate() {
         environment.shaderUniforms.u_ghostColors.value[i].copy(ghosts[i].lightColor);
     }
 
+    // Gestione transizione audio dinamica
     if (isAnyGhostHunting) {
         if (explorationMusic.isPlaying) explorationMusic.pause();
         if (chaseMusic.buffer && !chaseMusic.isPlaying) chaseMusic.play();
