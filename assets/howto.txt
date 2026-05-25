@@ -1,0 +1,8 @@
+alert: l'urlo del fantasma che si accorge del player
+chase: la musica di fondo durante lo stato di caccia
+coin: l'effetto di raccoglimento della moneta
+exploration: la musica di fondo normale
+fast: il fantasma che rincorre il player
+normal: il fantasma che si muove a velocità normale
+pickup: l'effetto di raccoglimento di un'arma
+shoot: il fuoco dell'arma
