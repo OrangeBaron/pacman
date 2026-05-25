@@ -1,5 +1,3 @@
-// maze.js
-
 export function generateMaze(width, height) {
     // Assicuriamoci che le dimensioni siano dispari per l'algoritmo di scavo
     width = width % 2 === 0 ? width + 1 : width;

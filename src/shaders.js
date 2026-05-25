@@ -1,4 +1,3 @@
-// shaders.js
 export const vertexShader = `
     varying vec3 vWorldPosition;
     void main() {
