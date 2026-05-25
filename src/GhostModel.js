@@ -5,13 +5,14 @@ export function createGhostMesh() {
     const ghostMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     
     // Testa
-    const headGeo = new THREE.SphereGeometry(0.5, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+    const headGeo = new THREE.SphereGeometry(0.5, 32, 8, 0, Math.PI * 2, 0, Math.PI / 2);
     const head = new THREE.Mesh(headGeo, ghostMat);
     head.position.y = 0.5;
     mesh.add(head);
 
     // Corpo ondulato
-    const bodyGeo = new THREE.CylinderGeometry(0.5, 0.5, 1, 16, 1, false);
+    const bodyGeo = new THREE.CylinderGeometry(0.5, 0.5, 1, 32, 1, true);
+    
     const posAttribute = bodyGeo.attributes.position;
     for (let i = 0; i < posAttribute.count; i++) {
         let y = posAttribute.getY(i);
@@ -19,10 +20,15 @@ export function createGhostMesh() {
             let x = posAttribute.getX(i);
             let z = posAttribute.getZ(i);
             let angle = Math.atan2(z, x);
-            posAttribute.setY(i, y + Math.sin(angle * 8) * 0.15);
+            
+            posAttribute.setY(i, y + Math.sin(angle * 6) * 0.15);
         }
     }
+    
+    // 2. Diciamo a Three.js di aggiornare la geometria dopo averla alterata a mano
+    posAttribute.needsUpdate = true;
     bodyGeo.computeVertexNormals();
+    
     const body = new THREE.Mesh(bodyGeo, ghostMat);
     mesh.add(body);
 

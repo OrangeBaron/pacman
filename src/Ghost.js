@@ -179,5 +179,9 @@ export class Ghost {
         const dummyMatrix = new THREE.Matrix4().lookAt(this.mesh.position, targetLookPos, new THREE.Vector3(0, 1, 0));
         this.targetQuaternion.setFromRotationMatrix(dummyMatrix);
         this.mesh.quaternion.slerp(this.targetQuaternion, 10 * delta);
+        
+        // --- 4. ANIMAZIONE DI FLUTTUAZIONE ---
+        const time = Date.now() * 0.004; 
+        this.mesh.position.y = 1.0 + Math.sin(time) * 0.1;
     }
 }
