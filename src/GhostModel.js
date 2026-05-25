@@ -2,7 +2,12 @@ import * as THREE from 'three';
 
 export function createGhostMesh() {
     const mesh = new THREE.Group();
-    const ghostMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    
+    const ghostMat = new THREE.MeshBasicMaterial({ 
+        color: 0xffffff,
+        transparent: true,
+        opacity: 1.0
+    });
     
     // Testa
     const headGeo = new THREE.SphereGeometry(0.5, 32, 8, 0, Math.PI * 2, 0, Math.PI / 2);
@@ -25,7 +30,6 @@ export function createGhostMesh() {
         }
     }
     
-    // 2. Diciamo a Three.js di aggiornare la geometria dopo averla alterata a mano
     posAttribute.needsUpdate = true;
     bodyGeo.computeVertexNormals();
     
@@ -37,7 +41,8 @@ export function createGhostMesh() {
     const textures = {
         normal: textureLoader.load('../assets/normal.png'),
         curious: textureLoader.load('../assets/curious.png'),
-        angry: textureLoader.load('../assets/angry.png')
+        angry: textureLoader.load('../assets/angry.png'),
+        stunned: textureLoader.load('../assets/stunned.png')
     };
     
     const faceGeo = new THREE.PlaneGeometry(0.6, 0.6);
@@ -52,5 +57,5 @@ export function createGhostMesh() {
     face.rotation.y = Math.PI; 
     mesh.add(face);
 
-    return { mesh, faceMat, textures };
+    return { mesh, faceMat, textures, ghostMat }; 
 }

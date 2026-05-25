@@ -19,7 +19,13 @@ export class Player {
         const instructions = document.getElementById('instructions');
         
         document.body.addEventListener('click', () => { 
-            if (!this.renderer.xr.isPresenting) this.controls.lock(); 
+            if (!this.renderer.xr.isPresenting) {
+                if (!this.controls.isLocked) {
+                    this.controls.lock();
+                } else if (this.weapon) {
+                    this.isShooting = true; 
+                }
+            } 
         });
         
         this.controls.addEventListener('lock', () => instructions.style.display = 'none');
@@ -53,7 +59,12 @@ export class Player {
         return false;
     }
 
-    update(delta) {
+    update(delta, ghosts) {
+        if (this.isShooting && this.weapon) {
+            this.weapon.shoot(ghosts);
+            this.isShooting = false;
+        }
+
         if (!this.renderer.xr.isPresenting && this.controls.isLocked) {
             this.direction.z = Number(this.moveState.forward) - Number(this.moveState.backward);
             this.direction.x = Number(this.moveState.right) - Number(this.moveState.left);

@@ -7,6 +7,7 @@ export class Ghost {
         this.cellSize = cellSize;
         this.offsetX = offsetX;
         this.offsetZ = offsetZ;
+        this.levelMap = levelMap;
         
         // Moduli delegati
         this.pathfinder = new Pathfinding(levelMap, cellSize, offsetX, offsetZ);
@@ -15,6 +16,7 @@ export class Ghost {
         this.mesh = model.mesh;
         this.faceMat = model.faceMat;
         this.textures = model.textures;
+        this.ghostMat = model.ghostMat;
         
         this.mesh.position.set(startX, 1.0, startZ);
         scene.add(this.mesh);
@@ -46,7 +48,7 @@ export class Ghost {
             this.audioNormal.setBuffer(buffer);
             this.audioNormal.setRefDistance(3);
             this.audioNormal.setLoop(true);
-            if (this.state !== 'HUNT') this.audioNormal.play();
+            if (this.state !== 'HUNT' && this.state !== 'STUNNED') this.audioNormal.play();
         });
 
         audioLoader.load('../assets/fast.mp3', (buffer) => {
@@ -66,11 +68,34 @@ export class Ghost {
         this.mesh.add(this.audioAlert);
     }
 
+    takeDamage() {
+        // Se non è già stordito, cambia lo stato
+        if (this.state !== 'STUNNED') {
+            this.changeState('STUNNED');
+        }
+    }
+
     changeState(newState) {
         if (this.state === newState) return; 
         this.state = newState;
 
-        if (this.state === 'HUNT') {
+        // Reset visivo base per tutti gli stati normali
+        this.ghostMat.color.setHex(0xffffff);
+        this.ghostMat.opacity = 1.0;
+
+        if (this.state === 'STUNNED') {
+            this.faceMat.map = this.textures.stunned;
+            this.lightColor.setHex(0x000000);
+            this.ghostMat.color.setHex(0x3366ff);
+            this.ghostMat.opacity = 0.5;
+            this.speed = this.huntSpeed;
+            
+            // Disattiva tutti i suoni che provengono dal fantasma
+            if (this.audioNormal.isPlaying) this.audioNormal.pause();
+            if (this.audioFast.isPlaying) this.audioFast.pause();
+            if (this.audioAlert.isPlaying) this.audioAlert.pause();
+
+        } else if (this.state === 'HUNT') {
             this.faceMat.map = this.textures.angry;
             this.lightColor.setHex(0xff0000); 
             this.speed = this.huntSpeed;
@@ -83,7 +108,7 @@ export class Ghost {
             this.speed = this.baseSpeed;
             if (this.audioFast.isPlaying) this.audioFast.pause();
             if (this.audioNormal.buffer && !this.audioNormal.isPlaying) this.audioNormal.play();
-        } else { 
+        } else { // PATROL
             this.faceMat.map = this.textures.normal;
             this.lightColor.setHex(0xaaffff); 
             this.speed = this.baseSpeed;
@@ -93,7 +118,9 @@ export class Ghost {
     }
 
     hearNoise(worldX, worldZ, noiseRadius) {
-        if (this.state === 'HUNT') return; 
+        // Ignora i rumori se sta cacciando o se è già stordito e sta scappando
+        if (this.state === 'HUNT' || this.state === 'STUNNED') return; 
+        
         const dist = Math.hypot(this.mesh.position.x - worldX, this.mesh.position.z - worldZ);
         if (dist <= noiseRadius) {
             this.investigateTargetGrid = this.pathfinder.getGridPos(worldX, worldZ);
@@ -115,16 +142,18 @@ export class Ghost {
         const playerGridPos = this.pathfinder.getGridPos(playerPos.x, playerPos.z);
         
         // --- 1. CONTROLLO VISIONE ---
-        const distToPlayer = this.mesh.position.distanceTo(playerPos);
-        if (distToPlayer < 20.0) {
-            const toPlayer = new THREE.Vector3().subVectors(playerPos, this.mesh.position).normalize();
-            toPlayer.y = 0; 
-            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.mesh.quaternion);
-            
-            if (forward.dot(toPlayer) > 0.6) { 
-                if (this.pathfinder.checkLineOfSight(gridPos.x, gridPos.z, playerGridPos.x, playerGridPos.z)) {
-                    this.lastSeenPlayerGrid = { x: playerGridPos.x, z: playerGridPos.z };
-                    this.changeState('HUNT');
+        if (this.state !== 'STUNNED') {
+            const distToPlayer = this.mesh.position.distanceTo(playerPos);
+            if (distToPlayer < 20.0) {
+                const toPlayer = new THREE.Vector3().subVectors(playerPos, this.mesh.position).normalize();
+                toPlayer.y = 0; 
+                const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.mesh.quaternion);
+                
+                if (forward.dot(toPlayer) > 0.6) { 
+                    if (this.pathfinder.checkLineOfSight(gridPos.x, gridPos.z, playerGridPos.x, playerGridPos.z)) {
+                        this.lastSeenPlayerGrid = { x: playerGridPos.x, z: playerGridPos.z };
+                        this.changeState('HUNT');
+                    }
                 }
             }
         }
@@ -138,7 +167,23 @@ export class Ghost {
             this.lastDecisionGrid = { x: gridPos.x, z: gridPos.z };
             let decided = false;
 
-            if (this.state === 'HUNT' && this.lastSeenPlayerGrid) {
+            if (this.state === 'STUNNED') {
+                // Calcola dinamicamente il centro della mappa
+                const centerX = Math.floor(this.levelMap[0].length / 2);
+                const centerZ = Math.floor(this.levelMap.length / 2);
+
+                if (gridPos.x === centerX && gridPos.z === centerZ) {
+                    // È arrivato alla base centrale! Si riattiva istantaneamente
+                    this.changeState('PATROL');
+                    // 'decided' rimane false in modo che scelga una direzione casuale per uscire dalla stanza
+                } else {
+                    const path = this.pathfinder.findPath(gridPos.x, gridPos.z, centerX, centerZ);
+                    if (path && path.length > 0) {
+                        this.direction = path[0]; 
+                        decided = true;
+                    }
+                }
+            } else if (this.state === 'HUNT' && this.lastSeenPlayerGrid) {
                 const path = this.pathfinder.findPath(gridPos.x, gridPos.z, this.lastSeenPlayerGrid.x, this.lastSeenPlayerGrid.z);
                 if (path && path.length > 0) {
                     this.direction = path[0]; 

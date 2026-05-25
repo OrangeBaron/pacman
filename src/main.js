@@ -6,6 +6,7 @@ import { CONFIG, OFFSET } from './config.js';
 import { Environment } from './Environment.js';
 import { CoinManager } from './CoinManager.js';
 import { Player } from './Player.js';
+import { Weapon } from './Weapon.js';
 
 // --- SETUP BASE ---
 const scene = new THREE.Scene();
@@ -42,8 +43,11 @@ audioLoader.load('../assets/chase.mp3', (buffer) => {
 const levelMap = generateMaze(CONFIG.MAP_SIZE, CONFIG.MAP_SIZE);
 const environment = new Environment(scene, levelMap);
 
-// --- SPAWN GIOCATORE (tramite classe isolata) ---
+// --- SPAWN GIOCATORE ---
 const player = new Player(camera, renderer, levelMap);
+const weapon = new Weapon(camera, audioListener); 
+player.weapon = weapon;
+scene.add(camera);
 let spawned = false;
 for (let z = levelMap.length - 2; z > 0; z--) {
     for (let x = 1; x < levelMap[z].length; x++) {
@@ -76,7 +80,7 @@ const clock = new THREE.Clock();
 function animate() {
     const delta = clock.getDelta();
 
-    player.update(delta);
+    player.update(delta, ghosts);
     coinManager.update(delta, camera.position);
 
     environment.shaderUniforms.u_playerPosition.value.copy(camera.position);
