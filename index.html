@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pac-Horror VR</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: sans-serif;
+        }
+        #instructions {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            text-align: center;
+            color: #ffffff;
+            pointer-events: none;
+            text-shadow: 1px 1px 2px black;
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="instructions">
+        Clicca per giocare (WASD + Mouse)<br>
+        Oppure usa il pulsante VR in basso
+    </div>
+    
+    <script type="module" src="main.js"></script>
+</body>
+</html>
