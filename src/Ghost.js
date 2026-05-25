@@ -79,6 +79,7 @@ export class Ghost {
     initAudio(audioListener) {
         this.audioNormal = new THREE.PositionalAudio(audioListener);
         this.audioFast = new THREE.PositionalAudio(audioListener);
+        this.audioAlert = new THREE.PositionalAudio(audioListener);
         
         const audioLoader = new THREE.AudioLoader();
         audioLoader.load('../assets/normal.mp3', (buffer) => {
@@ -94,8 +95,15 @@ export class Ghost {
             this.audioFast.setLoop(true);
         });
 
+        audioLoader.load('../assets/alert.mp3', (buffer) => {
+            this.audioAlert.setBuffer(buffer);
+            this.audioAlert.setRefDistance(5);
+            this.audioAlert.setLoop(false);
+        });
+
         this.mesh.add(this.audioNormal);
         this.mesh.add(this.audioFast);
+        this.mesh.add(this.audioAlert);
     }
 
     // --- Gestore Centrale degli Stati ---
@@ -114,7 +122,7 @@ export class Ghost {
             this.speed = this.baseSpeed;
         } else { // PATROL
             this.faceMat.map = this.textures.normal;
-            this.lightColor.setHex(0x00ffff); // Azzurro
+            this.lightColor.setHex(0xaaffff); // Bianco-azzurro
             this.speed = this.baseSpeed;
         }
 
@@ -122,13 +130,14 @@ export class Ghost {
         if (this.state === 'HUNT') {
             if (this.audioNormal.isPlaying) this.audioNormal.pause();
             if (this.audioFast.buffer && !this.audioFast.isPlaying) this.audioFast.play();
+            if (this.audioAlert.buffer && !this.audioAlert.isPlaying) this.audioAlert.play();
         } else {
             if (this.audioFast.isPlaying) this.audioFast.pause();
             if (this.audioNormal.buffer && !this.audioNormal.isPlaying) this.audioNormal.play();
         }
     }
 
-    // --- NUOVO: Sistema Uditivo ---
+    // --- Sistema Uditivo ---
     hearNoise(worldX, worldZ, noiseRadius) {
         if (this.state === 'HUNT') return; // Se vede la preda, ignora i rumori
 

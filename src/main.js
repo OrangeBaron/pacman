@@ -22,6 +22,23 @@ document.body.appendChild(VRButton.createButton(renderer));
 const audioListener = new THREE.AudioListener();
 camera.add(audioListener);
 
+const audioLoader = new THREE.AudioLoader();
+
+const explorationMusic = new THREE.Audio(audioListener);
+audioLoader.load('../assets/exploration.mp3', (buffer) => {
+    explorationMusic.setBuffer(buffer);
+    explorationMusic.setLoop(true);
+    explorationMusic.setVolume(0.1);
+    explorationMusic.play(); 
+});
+
+const chaseMusic = new THREE.Audio(audioListener);
+audioLoader.load('../assets/chase.mp3', (buffer) => {
+    chaseMusic.setBuffer(buffer);
+    chaseMusic.setLoop(true);
+    chaseMusic.setVolume(0.1);
+});
+
 // --- GENERAZIONE MONDO ---
 const levelMap = generateMaze(CONFIG.MAP_SIZE, CONFIG.MAP_SIZE);
 const environment = new Environment(scene, levelMap);
@@ -38,7 +55,7 @@ for (let z = 0; z < levelMap.length; z++) {
     }
 }
 
-// --- SPAWN SICURO DEL GIOCATORE ---
+// --- SPAWN DEL GIOCATORE ---
 let spawned = false;
 for (let z = levelMap.length - 2; z > 0; z--) {
     for (let x = 1; x < levelMap[z].length; x++) {
@@ -125,13 +142,29 @@ function animate() {
     // 3. Aggiornamento Uniformi per gli Shader e Logica Fantasmi
     environment.shaderUniforms.u_playerPosition.value.copy(camera.position);
 
+    let isAnyGhostHunting = false;
+
     for (let i = 0; i < ghosts.length; i++) {
         ghosts[i].update(delta, camera.position);
+        
+        // Verifica se almeno un fantasma è in modalità HUNT
+        if (ghosts[i].state === 'HUNT') {
+            isAnyGhostHunting = true;
+        }
         
         environment.shaderUniforms.u_ghostPositions.value[i].copy(ghosts[i].mesh.position);
         environment.shaderUniforms.u_ghostPositions.value[i].y += 0.2; 
         environment.shaderUniforms.u_ghostDirections.value[i].copy(ghosts[i].getFacingDirection());
         environment.shaderUniforms.u_ghostColors.value[i].copy(ghosts[i].lightColor);
+    }
+
+    // 4. GESTIONE MUSICA AMBIENTALE
+    if (isAnyGhostHunting) {
+        if (explorationMusic.isPlaying) explorationMusic.pause();
+        if (chaseMusic.buffer && !chaseMusic.isPlaying) chaseMusic.play();
+    } else {
+        if (chaseMusic.isPlaying) chaseMusic.pause();
+        if (explorationMusic.buffer && !explorationMusic.isPlaying) explorationMusic.play();
     }
 
     renderer.render(scene, camera);
