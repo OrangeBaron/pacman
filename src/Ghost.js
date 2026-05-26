@@ -4,7 +4,7 @@ import { createGhostMesh } from './GhostModel.js';
 import { STATS } from './config.js';
 
 export class Ghost {
-    constructor(scene, startX, startZ, cellSize, offsetX, offsetZ, levelMap, audioListener) {
+    constructor(scene, startX, startZ, cellSize, offsetX, offsetZ, levelMap, audioManager) {
         this.cellSize = cellSize;
         this.offsetX = offsetX;
         this.offsetZ = offsetZ;
@@ -36,36 +36,20 @@ export class Ghost {
         this.targetQuaternion = new THREE.Quaternion();
         this.gameStarted = false;
 
-        this.initAudio(audioListener);
+        this.initAudio(audioManager);
         this.pickRandomDirection();
     }
 
-    initAudio(audioListener) {
-        this.audioNormal = new THREE.PositionalAudio(audioListener);
-        this.audioFast = new THREE.PositionalAudio(audioListener);
-        this.audioAlert = new THREE.PositionalAudio(audioListener);
-        
-        const audioLoader = new THREE.AudioLoader();
-        audioLoader.load('./assets/normal.mp3', (buffer) => {
-            this.audioNormal.setBuffer(buffer);
-            this.audioNormal.setRefDistance(3);
-            this.audioNormal.setLoop(true);
+    initAudio(audioManager) {
+        // Usiamo l'AudioManager centrale per istanziare e pre-caricare i suoni posizionali 3D
+        this.audioNormal = audioManager.createPositionalSound('./assets/normal.mp3', 3, true, () => {
             if (this.gameStarted && this.state !== 'HUNT' && this.state !== 'STUNNED') {
                 this.audioNormal.play();
             }
         });
 
-        audioLoader.load('./assets/fast.mp3', (buffer) => {
-            this.audioFast.setBuffer(buffer);
-            this.audioFast.setRefDistance(5);
-            this.audioFast.setLoop(true);
-        });
-
-        audioLoader.load('./assets/alert.mp3', (buffer) => {
-            this.audioAlert.setBuffer(buffer);
-            this.audioAlert.setRefDistance(5);
-            this.audioAlert.setLoop(false);
-        });
+        this.audioFast = audioManager.createPositionalSound('./assets/fast.mp3', 5, true);
+        this.audioAlert = audioManager.createPositionalSound('./assets/alert.mp3', 5, false);
 
         this.mesh.add(this.audioNormal);
         this.mesh.add(this.audioFast);
@@ -114,7 +98,7 @@ export class Ghost {
             this.ghostMat.opacity = 0.5;
             this.speed = this.huntSpeed;
             
-            // Disattiva tutti i suoni che provengono dal fantasma
+            // Disattiva tutti i suoni che provengono dal fantasma quando è stordito
             if (this.audioNormal.isPlaying) this.audioNormal.pause();
             if (this.audioFast.isPlaying) this.audioFast.pause();
             if (this.audioAlert.isPlaying) this.audioAlert.pause();
@@ -165,7 +149,7 @@ export class Ghost {
         const gridPos = this.pathfinder.getGridPos(currentX, currentZ);
         const playerGridPos = this.pathfinder.getGridPos(playerPos.x, playerPos.z);
         
-        // --- 1. CONTROLLO VISIONE ---
+        // --- 1. CONTROLLO VISIONE (Line of Sight) ---
         if (this.state !== 'STUNNED') {
             const distToPlayer = this.mesh.position.distanceTo(playerPos);
             if (distToPlayer < 20.0) {
@@ -182,7 +166,7 @@ export class Ghost {
             }
         }
 
-        // --- 2. MOVIMENTO E DECISIONI ---
+        // --- 2. MOVIMENTO E DECISIONI (A*) ---
         const cellCenterX = (gridPos.x + this.offsetX) * this.cellSize;
         const cellCenterZ = (gridPos.z + this.offsetZ) * this.cellSize;
         const distToCenter = Math.hypot(currentX - cellCenterX, currentZ - cellCenterZ);
@@ -192,14 +176,13 @@ export class Ghost {
             let decided = false;
 
             if (this.state === 'STUNNED') {
-                // Calcola dinamicamente il centro della mappa
+                // Calcola dinamicamente il centro della mappa per la rigenerazione
                 const centerX = Math.floor(this.levelMap[0].length / 2);
                 const centerZ = Math.floor(this.levelMap.length / 2);
 
                 if (gridPos.x === centerX && gridPos.z === centerZ) {
-                    // È arrivato alla base centrale! Si riattiva istantaneamente
+                    // Arrivato al centro! Torna in pattugliamento attivo
                     this.changeState('PATROL');
-                    // 'decided' rimane false in modo che scelga una direzione casuale per uscire dalla stanza
                 } else {
                     const path = this.pathfinder.findPath(gridPos.x, gridPos.z, centerX, centerZ);
                     if (path && path.length > 0) {
@@ -242,14 +225,14 @@ export class Ghost {
             }
         }
 
-        // --- 3. APPLICAZIONE FISICA ---
+        // --- 3. APPLICAZIONE FISICA E ROTAZIONE ---
         this.mesh.position.add(this.direction.clone().multiplyScalar(this.speed * delta));
         const targetLookPos = this.mesh.position.clone().add(this.direction);
         const dummyMatrix = new THREE.Matrix4().lookAt(this.mesh.position, targetLookPos, new THREE.Vector3(0, 1, 0));
         this.targetQuaternion.setFromRotationMatrix(dummyMatrix);
         this.mesh.quaternion.slerp(this.targetQuaternion, 10 * delta);
         
-        // --- 4. ANIMAZIONE DI FLUTTUAZIONE ---
+        // --- 4. ANIMAZIONE DI FLUTTUAZIONE (Bobbing effect) ---
         const time = Date.now() * 0.004; 
         this.mesh.position.y = 1.0 + Math.sin(time) * 0.1;
     }

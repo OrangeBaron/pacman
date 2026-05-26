@@ -2,20 +2,13 @@ import * as THREE from 'three';
 import { CONFIG, OFFSET, STATS } from './config.js';
 
 export class CoinManager {
-    constructor(scene, levelMap, audioListener, ghosts, playerInitialPos) {
+    constructor(scene, levelMap, audioManager, ghosts, playerInitialPos) {
         this.scene = scene;
         this.levelMap = levelMap;
         this.ghosts = ghosts;
         this.coins = [];
+        this.audioManager = audioManager;
         
-        // --- SETUP AUDIO DELLA MONETA ---
-        this.coinSound = new THREE.Audio(audioListener);
-        const audioLoader = new THREE.AudioLoader();
-        audioLoader.load('./assets/coin.mp3', (buffer) => {
-            this.coinSound.setBuffer(buffer);
-            this.coinSound.setVolume(0.4);
-        });
-
         // --- GEOMETRIA E MATERIALE BASE ---
         const coinGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.04, 16);
         coinGeometry.rotateX(Math.PI / 2);
@@ -68,8 +61,7 @@ export class CoinManager {
         STATS.coinsCollected++;
 
         // 2. Riproduci il suono di raccolta
-        if (this.coinSound.isPlaying) this.coinSound.stop();
-        if (this.coinSound.buffer) this.coinSound.play();
+        this.audioManager.playForce('coin');
 
         // 3. PROPAGAZIONE DEL RUMORE
         this.ghosts.forEach(ghost => {

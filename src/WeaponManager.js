@@ -2,19 +2,12 @@ import * as THREE from 'three';
 import { CONFIG, OFFSET } from './config.js';
 
 export class WeaponManager {
-    constructor(scene, levelMap, audioListener, ghosts, playerWeapon) {
+    constructor(scene, levelMap, audioManager, ghosts, playerWeapon) {
         this.scene = scene;
         this.ghosts = ghosts;
         this.playerWeapon = playerWeapon;
         this.pickups = [];
-
-        // --- SETUP AUDIO RACCOLTA ---
-        this.pickupSound = new THREE.Audio(audioListener);
-        const audioLoader = new THREE.AudioLoader();
-        audioLoader.load('./assets/pickup.mp3', (buffer) => {
-            this.pickupSound.setBuffer(buffer);
-            this.pickupSound.setVolume(0.6);
-        });
+        this.audioManager = audioManager;
 
         // --- GENERAZIONE ARMI SULLA MAPPA ---
         for (let z = 0; z < levelMap.length; z++) {
@@ -74,9 +67,8 @@ export class WeaponManager {
                 this.scene.remove(pickup);
                 this.pickups.splice(i, 1);
 
-                // 2. Audio
-                if (this.pickupSound.isPlaying) this.pickupSound.stop();
-                if (this.pickupSound.buffer) this.pickupSound.play();
+                // 2. Audio (Centralizzato)
+                this.audioManager.playForce('pickup');
 
                 // 3. Equipaggia il fucile e ripristina munizioni
                 this.playerWeapon.equip('rifle');
