@@ -5,10 +5,10 @@ export const CONFIG = {
     PLAYER_RADIUS: 0.4,
     COLORS: {
         BG: 0x020202,
-        WALL: 0x050508,
-        FLOOR_NORMAL: 0x020202,
-        FLOOR_GHOST_BASE: 0x000011,
-        FLOOR_WEAPON: 0x111100,
+        WALL: 0x555555,
+        FLOOR_NORMAL: 0x333333,
+        FLOOR_GHOST_BASE: 0x222266,
+        FLOOR_WEAPON: 0x666622,
     }
 };
 
