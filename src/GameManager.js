@@ -1,10 +1,12 @@
+import * as THREE from 'three';
 import { STATS } from './config.js';
 
 export class GameManager {
-    constructor(audioManager, ghosts, clock) {
+    constructor(audioManager, ghosts, clock, camera) {
         this.audioManager = audioManager;
         this.ghosts = ghosts;
         this.clock = clock;
+        this.camera = camera;
         
         this.gameStarted = false;
         this.isGameOver = false;
@@ -51,16 +53,58 @@ export class GameManager {
     }
 
     showEndGameBoard(isVictory) {
-        console.log(`--- STATISTICHE PARTITA ---`);
-        console.log(`Esito: ${isVictory ? "VITTORIA" : "GAME OVER"}`);
-        console.log(`Monete: ${STATS.coinsCollected} / ${STATS.totalCoins}`);
-        console.log(`Volte scoperto: ${STATS.timesDiscovered}`);
-        console.log(`Fantasmi storditi: ${STATS.ghostsDefeated}`);
+        const accuracy = STATS.shotsFired > 0 ? Math.round((STATS.shotsHit / STATS.shotsFired) * 100) : 0;
+
+        // --- CREAZIONE TABELLONE 3D TRAMITE CANVAS ---
+        const canvas = document.createElement('canvas');
+        canvas.width = 1024;
+        canvas.height = 1024;
+        const ctx = canvas.getContext('2d');
+
+        // Sfondo dinamico: verde per la vittoria, rosso per la sconfitta
+        ctx.fillStyle = isVictory ? 'rgba(10, 80, 10, 0.85)' : 'rgba(80, 10, 10, 0.85)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        const accuracy = STATS.shotsFired > 0 
-            ? Math.round((STATS.shotsHit / STATS.shotsFired) * 100) 
-            : 0;
-        console.log(`Proiettili sparati: ${STATS.shotsFired} (Precisione: ${accuracy}%)`);
+        // Bordo
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 15;
+        ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+
+        // Stile base per il testo
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+
+        // Titolo
+        ctx.font = 'bold 100px sans-serif';
+        ctx.fillText(isVictory ? "VITTORIA!" : "SEI MORTO!", canvas.width / 2, 200);
+
+        // Statistiche
+        ctx.font = '55px sans-serif';
+        ctx.fillText(`Monete raccolte: ${STATS.coinsCollected} / ${STATS.totalCoins}`, canvas.width / 2, 400);
+        ctx.fillText(`Fantasmi storditi: ${STATS.ghostsDefeated}`, canvas.width / 2, 500);
+        ctx.fillText(`Volte scoperto: ${STATS.timesDiscovered}`, canvas.width / 2, 600);
+        ctx.fillText(`Proiettili sparati: ${STATS.shotsFired}`, canvas.width / 2, 700);
+        ctx.fillText(`Precisione di tiro: ${accuracy}%`, canvas.width / 2, 800);
+
+        // Istruzione finale
+        ctx.fillStyle = '#aaaaaa';
+        ctx.font = 'italic 45px sans-serif';
+        ctx.fillText("Ricarica la pagina per giocare di nuovo", canvas.width / 2, 950);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        
+        const material = new THREE.MeshBasicMaterial({ 
+            map: texture, 
+            transparent: true,
+            depthTest: false 
+        });
+        
+        const geometry = new THREE.PlaneGeometry(1.5, 1.5);
+        const panel = new THREE.Mesh(geometry, material);
+        panel.renderOrder = 999;
+
+        panel.position.set(0, 0, -2);
+        this.camera.add(panel);
     }
 
     update(playerWorldPos) {

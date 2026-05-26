@@ -74,7 +74,7 @@ for (let z = 0; z < levelMap.length; z++) {
 const coinManager = new CoinManager(scene, levelMap, audioManager, ghosts, playerWorldPos);
 const weaponManager = new WeaponManager(scene, levelMap, audioManager, ghosts, weapon);
 const clock = new THREE.Clock();
-const gameManager = new GameManager(audioManager, ghosts, clock);
+const gameManager = new GameManager(audioManager, ghosts, clock, camera);
 
 // --- GESTIONE AVVIO PARTITA ---
 player.input.controls.addEventListener('lock', () => gameManager.startGame());
