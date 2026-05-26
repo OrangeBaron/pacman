@@ -45,5 +45,5 @@ Il gioco è uno sparatutto in prima persona (FPS) a tema dark-horror basato su P
 ### 🖥️ Interfaccia ed End-Game (Work In Progress)
 
 - [ ] **DA FARE - UI / HUD (User Interface):** Aggiungere a schermo (o attaccato al polso in VR) il conteggio delle monete rimanenti e delle munizioni dell'arma speciale.
-- [ ] **DA FARE - Condizione di Vittoria:** Implementare la schermata e il trigger di vittoria quando tutte le monete della `CoinManager` vengono raccolte.
-- [ ] **DA FARE - Condizione di Sconfitta (Game Over):** Implementare la morte istantanea alla collisione col modello del fantasma (quando non è in stato 'stunned') e schermata di riavvio.
+- [x] **VITTORIA:** Implementato il trigger di vittoria e la gestione della musica/stato quando tutte le monete vengono raccolte.
+- [x] **GAME OVER:** Implementata la collisione letale con i fantasmi e la gestione della musica/stato di sconfitta.
