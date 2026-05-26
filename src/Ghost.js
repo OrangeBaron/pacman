@@ -33,6 +33,7 @@ export class Ghost {
         this.lastSeenPlayerGrid = null;
         this.investigateTargetGrid = null; 
         this.targetQuaternion = new THREE.Quaternion();
+        this.gameStarted = false;
 
         this.initAudio(audioListener);
         this.pickRandomDirection();
@@ -48,7 +49,9 @@ export class Ghost {
             this.audioNormal.setBuffer(buffer);
             this.audioNormal.setRefDistance(3);
             this.audioNormal.setLoop(true);
-            if (this.state !== 'HUNT' && this.state !== 'STUNNED') this.audioNormal.play();
+            if (this.gameStarted && this.state !== 'HUNT' && this.state !== 'STUNNED') {
+                this.audioNormal.play();
+            }
         });
 
         audioLoader.load('./assets/fast.mp3', (buffer) => {
@@ -66,6 +69,13 @@ export class Ghost {
         this.mesh.add(this.audioNormal);
         this.mesh.add(this.audioFast);
         this.mesh.add(this.audioAlert);
+    }
+
+    onGameStart() {
+        this.gameStarted = true;
+        if (this.audioNormal.buffer && !this.audioNormal.isPlaying && this.state !== 'HUNT' && this.state !== 'STUNNED') {
+            this.audioNormal.play();
+        }
     }
 
     takeDamage() {

@@ -35,7 +35,6 @@ audioLoader.load('./assets/exploration.mp3', (buffer) => {
     explorationMusic.setBuffer(buffer);
     explorationMusic.setLoop(true);
     explorationMusic.setVolume(0.1);
-    explorationMusic.play(); 
 });
 
 const chaseMusic = new THREE.Audio(audioListener);
@@ -54,16 +53,28 @@ const player = new Player(camera, playerRig, renderer, levelMap, scene);
 const weapon = new Weapon(camera, audioListener); 
 player.weapon = weapon;
 
-let spawned = false;
-for (let z = levelMap.length - 2; z > 0; z--) {
-    for (let x = 1; x < levelMap[z].length; x++) {
-        if (levelMap[z][x] === 0 && !spawned) {
-            playerRig.position.set((x + OFFSET.X) * CONFIG.CELL_SIZE, 0, (z + OFFSET.Z) * CONFIG.CELL_SIZE);
-            camera.position.set(0, 1.6, 0);
-            camera.lookAt(0, 1.6, 0); 
-            spawned = true;
+const emptyCells = [];
+for (let z = 0; z < levelMap.length; z++) {
+    for (let x = 0; x < levelMap[z].length; x++) {
+        if (levelMap[z][x] === 0) {
+            emptyCells.push({ x: x, z: z });
         }
     }
+}
+
+if (emptyCells.length > 0) {
+    const randomIndex = Math.floor(Math.random() * emptyCells.length);
+    const randomSpawn = emptyCells[randomIndex];
+    
+    playerRig.position.set(
+        (randomSpawn.x + OFFSET.X) * CONFIG.CELL_SIZE, 
+        0, 
+        (randomSpawn.z + OFFSET.Z) * CONFIG.CELL_SIZE
+    );
+    camera.position.set(0, 1.6, 0);
+    
+    const randomRotation = Math.floor(Math.random() * 4) * (Math.PI / 2);
+    playerRig.rotation.y = randomRotation;
 }
 
 playerRig.updateMatrixWorld(true);
@@ -86,21 +97,63 @@ for (let z = 0; z < levelMap.length; z++) {
 const coinManager = new CoinManager(scene, levelMap, audioListener, ghosts, playerWorldPos);
 const weaponManager = new WeaponManager(scene, levelMap, audioListener, ghosts, weapon);
 
-// --- GAME LOOP ---
+// --- GESTIONE AVVIO PARTITA ---
+let gameStarted = false;
 const clock = new THREE.Clock();
 
+function startGame() {
+    if (gameStarted) return;
+    gameStarted = true;
+    
+    if (audioListener.context.state === 'suspended') {
+        audioListener.context.resume();
+    }
+    
+    if (explorationMusic.buffer && !explorationMusic.isPlaying) {
+        explorationMusic.play();
+    }
+    
+    ghosts.forEach(ghost => ghost.onGameStart());
+    
+    clock.start(); 
+}
+
+player.controls.addEventListener('lock', startGame);
+
+renderer.xr.addEventListener('sessionstart', startGame);
+
+
+// --- GAME LOOP ---
 function animate() {
     const delta = clock.getDelta();
 
-    player.update(delta, ghosts);
-    
-    camera.getWorldPosition(playerWorldPos);
+    // Aggiorna la logica SOLO se il giocatore ha interagito
+    if (gameStarted) {
+        player.update(delta, ghosts);
+        camera.getWorldPosition(playerWorldPos);
 
-    coinManager.update(delta, playerWorldPos);
-    weaponManager.update(delta, playerWorldPos);
+        coinManager.update(delta, playerWorldPos);
+        weaponManager.update(delta, playerWorldPos);
+
+        let isAnyGhostHunting = false;
+
+        for (let i = 0; i < ghosts.length; i++) {
+            ghosts[i].update(delta, playerWorldPos);
+            if (ghosts[i].state === 'HUNT') isAnyGhostHunting = true;
+        }
+
+        // Gestione transizione audio dinamica
+        if (isAnyGhostHunting) {
+            if (explorationMusic.isPlaying) explorationMusic.pause();
+            if (chaseMusic.buffer && !chaseMusic.isPlaying) chaseMusic.play();
+        } else {
+            if (chaseMusic.isPlaying) chaseMusic.pause();
+            if (explorationMusic.buffer && !explorationMusic.isPlaying) explorationMusic.play();
+        }
+    }
+
     environment.shaderUniforms.u_playerPosition.value.copy(playerWorldPos);
 
-    // --- AGGIORNAMENTO LUCI DELLE ARMI ---
     for (let i = 0; i < 4; i++) {
         if (i < weaponManager.pickups.length) {
             environment.shaderUniforms.u_weaponPositions.value[i].copy(weaponManager.pickups[i].position);
@@ -109,26 +162,11 @@ function animate() {
         }
     }
 
-    let isAnyGhostHunting = false;
-
     for (let i = 0; i < ghosts.length; i++) {
-        ghosts[i].update(delta, playerWorldPos);
-        
-        if (ghosts[i].state === 'HUNT') isAnyGhostHunting = true;
-        
         environment.shaderUniforms.u_ghostPositions.value[i].copy(ghosts[i].mesh.position);
         environment.shaderUniforms.u_ghostPositions.value[i].y += 0.2; 
         environment.shaderUniforms.u_ghostDirections.value[i].copy(ghosts[i].getFacingDirection());
         environment.shaderUniforms.u_ghostColors.value[i].copy(ghosts[i].lightColor);
-    }
-
-    // Gestione transizione audio dinamica
-    if (isAnyGhostHunting) {
-        if (explorationMusic.isPlaying) explorationMusic.pause();
-        if (chaseMusic.buffer && !chaseMusic.isPlaying) chaseMusic.play();
-    } else {
-        if (chaseMusic.isPlaying) chaseMusic.pause();
-        if (explorationMusic.buffer && !explorationMusic.isPlaying) explorationMusic.play();
     }
 
     renderer.render(scene, camera);
