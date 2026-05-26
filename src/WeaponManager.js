@@ -39,7 +39,6 @@ export class WeaponManager {
         const bodyMat = new THREE.MeshBasicMaterial({ color: 0x333333 });
         const sightMat = new THREE.MeshBasicMaterial({ color: 0x33ff33 }); 
 
-        // Una versione leggermente semplificata del fucile da mostrare per terra
         const body = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.15, 0.6), bodyMat);
         group.add(body);
         
@@ -51,15 +50,6 @@ export class WeaponManager {
         sight.position.set(0, 0.09, -0.8);
         group.add(sight);
 
-        // Aggiungiamo una piccola base/alone verde per renderlo più visibile nel buio
-        const aura = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.4, 0.4, 0.05, 16),
-            new THREE.MeshBasicMaterial({ color: 0x33ff33, transparent: true, opacity: 0.5 })
-        );
-        aura.position.y = -0.5;
-        group.add(aura);
-
-        // Aumentiamo leggermente la scala per renderlo facile da vedere
         group.scale.set(1.2, 1.2, 1.2);
         
         return group;

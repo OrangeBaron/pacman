@@ -1,4 +1,3 @@
-// Environment.js
 import * as THREE from 'three';
 import { CONFIG, OFFSET } from './config.js';
 import { vertexShader, fragmentShader } from './shaders.js';
@@ -18,6 +17,7 @@ export class Environment {
             u_ghostPositions: { value: Array(4).fill(null).map(() => new THREE.Vector3(0, -100, 0)) },
             u_ghostDirections: { value: Array(4).fill(null).map(() => new THREE.Vector3(0, 0, 1)) },
             u_ghostColors: { value: Array(4).fill(null).map(() => new THREE.Color(0x00ffff)) },
+            u_weaponPositions: { value: Array(4).fill(null).map(() => new THREE.Vector3(0, -100, 0)) },
             u_playerPosition: { value: new THREE.Vector3(0, 0, 0) },
             u_mapTexture: { value: null }, 
             u_mapSize: { value: CONFIG.MAP_SIZE },

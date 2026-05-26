@@ -17,6 +17,7 @@ export const fragmentShader = `
     uniform vec3 u_ghostPositions[4];
     uniform vec3 u_ghostDirections[4];
     uniform vec3 u_ghostColors[4];
+    uniform vec3 u_weaponPositions[4];
     uniform vec3 u_playerPosition;
     
     uniform sampler2D u_mapTexture;
@@ -145,8 +146,28 @@ export const fragmentShader = `
                 }
             }
         }
+        
+        // --- CALCOLO LUCE DELLE ARMI ---
+        vec3 weaponIllumination = vec3(0.0);
+        vec3 weaponColor = vec3(0.2, 1.0, 0.2);
+        
+        for(int i = 0; i < 4; i++) {
+            vec3 weaponPos = u_weaponPositions[i];
+            vec3 toPixel = vWorldPosition - weaponPos;
+            float dist = length(toPixel);
+            
+            // Raggio d'azione della luce dell'arma
+            if (dist < 6.0) {
+                // Calcoliamo le ombre come per i fantasmi
+                if (!isOccluded(vWorldPosition, weaponPos)) {
+                    float intensity = smoothstep(6.0, 0.0, dist);
+                    weaponIllumination += weaponColor * (intensity * 1.0); 
+                }
+            }
+        }
 
-        vec3 finalColor = baseIllumination + (albedo * ghostIllumination * 5.0);
+        // Sommiamo la luce delle armi al colore finale
+        vec3 finalColor = baseIllumination + (albedo * ghostIllumination * 5.0) + (albedo * weaponIllumination);
 
         gl_FragColor = vec4(clamp(finalColor, 0.0, 1.0), 1.0);
     }

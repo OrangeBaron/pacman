@@ -100,6 +100,15 @@ function animate() {
     weaponManager.update(delta, playerWorldPos);
     environment.shaderUniforms.u_playerPosition.value.copy(playerWorldPos);
 
+    // --- AGGIORNAMENTO LUCI DELLE ARMI ---
+    for (let i = 0; i < 4; i++) {
+        if (i < weaponManager.pickups.length) {
+            environment.shaderUniforms.u_weaponPositions.value[i].copy(weaponManager.pickups[i].position);
+        } else {
+            environment.shaderUniforms.u_weaponPositions.value[i].set(0, -100, 0); 
+        }
+    }
+
     let isAnyGhostHunting = false;
 
     for (let i = 0; i < ghosts.length; i++) {
