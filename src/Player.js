@@ -14,6 +14,10 @@ export class Player {
         this.moveState = { forward: false, backward: false, left: false, right: false };
         this.direction = new THREE.Vector3();
         
+        // Nuovi stati per gestire la pressione del grilletto/mouse
+        this.isTriggerDown = false;
+        this.triggerPressedThisFrame = false;
+        
         this.initControls();
         this.initVRControls(); 
     }
@@ -22,9 +26,16 @@ export class Player {
         this.controllers = [];
         for (let i = 0; i < 2; i++) {
             const controller = this.renderer.xr.getController(i);
+            
             controller.addEventListener('selectstart', () => {
-                if (this.weapon) this.isShooting = true;
+                this.isTriggerDown = true;
+                this.triggerPressedThisFrame = true;
             });
+
+            controller.addEventListener('selectend', () => {
+                this.isTriggerDown = false;
+            });
+
             this.scene.add(controller);
             this.controllers.push(controller);
         }
@@ -33,14 +44,26 @@ export class Player {
     initControls() {
         const instructions = document.getElementById('instructions');
         
+        // Il click sul body ora serve solo per bloccare il cursore (PointerLock)
         document.body.addEventListener('click', () => { 
-            if (!this.renderer.xr.isPresenting) {
-                if (!this.controls.isLocked) {
-                    this.controls.lock();
-                } else if (this.weapon) {
-                    this.isShooting = true; 
-                }
+            if (!this.renderer.xr.isPresenting && !this.controls.isLocked) {
+                this.controls.lock();
             } 
+        });
+
+        // Gestione pressione pulsante sinistro del mouse per sparare
+        document.addEventListener('mousedown', (e) => {
+            if (!this.renderer.xr.isPresenting && this.controls.isLocked && e.button === 0) {
+                this.isTriggerDown = true;
+                this.triggerPressedThisFrame = true;
+            }
+        });
+
+        // Rilascio del mouse
+        document.addEventListener('mouseup', (e) => {
+            if (e.button === 0) {
+                this.isTriggerDown = false;
+            }
         });
         
         this.controls.addEventListener('lock', () => instructions.style.display = 'none');
@@ -75,21 +98,28 @@ export class Player {
     }
 
     update(delta, ghosts) {
-        if (this.isShooting && this.weapon) {
-            const activeController = this.renderer.xr.isPresenting ? (this.controllers[1] || this.controllers[0]) : null;
-            this.weapon.shoot(ghosts, activeController);
-            this.isShooting = false;
+        // --- 1. GESTIONE FUOCO ---
+        if (this.weapon) {
+            const wStats = this.weapon.stats[this.weapon.currentType];
+            
+            const shouldShoot = (wStats.automatic && this.isTriggerDown) || this.triggerPressedThisFrame;
+            
+            if (shouldShoot) {
+                const activeController = this.renderer.xr.isPresenting ? (this.controllers[1] || this.controllers[0]) : null;
+                this.weapon.shoot(ghosts, activeController);
+            }
         }
+        this.triggerPressedThisFrame = false;
 
+
+        // --- 2. MOVIMENTO ---
         let inputX = 0;
         let inputZ = 0;
 
-        // 1. Leggi Input: Flat Mode o VR Mode
         if (!this.renderer.xr.isPresenting && this.controls.isLocked) {
             inputZ = Number(this.moveState.forward) - Number(this.moveState.backward);
             inputX = Number(this.moveState.right) - Number(this.moveState.left);
         } else if (this.renderer.xr.isPresenting) {
-            // Leggi le levette del controller VR
             const session = this.renderer.xr.getSession();
             if (session && session.inputSources) {
                 for (const source of session.inputSources) {
@@ -104,7 +134,6 @@ export class Player {
             }
         }
 
-        // 2. Applica Movimento
         const dirVector = new THREE.Vector2(inputX, inputZ).normalize();
         
         if (dirVector.lengthSq() > 0) {

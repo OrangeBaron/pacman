@@ -3,13 +3,14 @@ import * as THREE from 'three';
 export class Weapon {
     constructor(camera, audioListener) {
         this.camera = camera;
-        this.mesh = this.createModel();
+        
+        // Contenitore vuoto che ospiterà la mesh dell'arma attiva
+        this.mesh = new THREE.Group();
         this.camera.add(this.mesh);
         this.mesh.position.set(0.3, -0.3, -0.6);
 
         // -- Setup Raycaster per mirare --
         this.raycaster = new THREE.Raycaster();
-        // Il centro dello schermo in coordinate normalizzate
         this.centerScreen = new THREE.Vector2(0, 0); 
 
         // -- Setup Audio --
@@ -20,46 +21,68 @@ export class Weapon {
             this.shootSound.setVolume(0.5);
         });
 
-        // -- Gestione Rateo di Fuoco --
+        // -- Statistiche e Modelli delle armi --
+        this.models = {
+            pistol: this.createPistolModel(),
+            rifle: this.createRifleModel()
+        };
+
+        this.stats = {
+            pistol: { fireRate: 1000, ammo: Infinity, automatic: false },
+            rifle: { fireRate: 150, ammo: 30, automatic: true }
+        };
+
         this.canShoot = true;
-        this.fireRate = 1000; // 1 secondo tra un colpo e l'altro (rateo lento)
+        this.currentType = null;
+        this.currentAmmo = 0;
+
+        // Equipaggia l'arma di base all'avvio
+        this.equip('pistol');
     }
 
-    createModel() {
-        const group = new THREE.Group();
+    equip(weaponType) {
+        if (!this.models[weaponType]) return;
 
-        // Definiamo diversi materiali per dare contrasto all'arma
+        this.currentType = weaponType;
+        this.currentAmmo = this.stats[weaponType].ammo;
+
+        // Rimuove il modello dell'arma precedente
+        while(this.mesh.children.length > 0){ 
+            this.mesh.remove(this.mesh.children[0]); 
+        }
+
+        // Aggiunge il nuovo modello
+        this.mesh.add(this.models[weaponType]);
+    }
+
+    createPistolModel() {
+        const group = new THREE.Group();
         const darkMetalMat = new THREE.MeshBasicMaterial({ color: 0x2b2b2b });
         const lightMetalMat = new THREE.MeshBasicMaterial({ color: 0x4a4a4a });
         const gripMat = new THREE.MeshBasicMaterial({ color: 0x3e2723 });
         const sightMat = new THREE.MeshBasicMaterial({ color: 0xff3333 });
 
-        // 1. Canna / Corpo principale (Grigio scuro)
         const barrelGeo = new THREE.BoxGeometry(0.07, 0.08, 0.4);
         const barrel = new THREE.Mesh(barrelGeo, darkMetalMat);
         barrel.position.set(0, 0, -0.1);
         group.add(barrel);
 
-        // 2. Carrello superiore (Grigio più chiaro e leggermente più largo)
         const slideGeo = new THREE.BoxGeometry(0.08, 0.04, 0.42);
         const slide = new THREE.Mesh(slideGeo, lightMetalMat);
         slide.position.set(0, 0.06, -0.11);
         group.add(slide);
 
-        // 3. Impugnatura / Grip (Marrone)
         const handleGeo = new THREE.BoxGeometry(0.06, 0.2, 0.1);
         const handle = new THREE.Mesh(handleGeo, gripMat);
         handle.position.set(0, -0.14, 0.05);
         handle.rotation.x = Math.PI / 8;
         group.add(handle);
 
-        // 4. Guardia del grilletto (Sotto la canna, davanti all'impugnatura)
         const guardGeo = new THREE.BoxGeometry(0.01, 0.08, 0.1);
         const guard = new THREE.Mesh(guardGeo, darkMetalMat);
         guard.position.set(0, -0.06, -0.03);
         group.add(guard);
 
-        // 5. Mirino (Piccolo punto rosso sulla punta della canna)
         const sightGeo = new THREE.BoxGeometry(0.015, 0.03, 0.02);
         const sight = new THREE.Mesh(sightGeo, sightMat);
         sight.position.set(0, 0.09, -0.3);
@@ -68,40 +91,89 @@ export class Weapon {
         return group;
     }
 
+    createRifleModel() {
+        const group = new THREE.Group();
+        const darkMetalMat = new THREE.MeshBasicMaterial({ color: 0x1a1a1a });
+        const bodyMat = new THREE.MeshBasicMaterial({ color: 0x333333 });
+        const stockMat = new THREE.MeshBasicMaterial({ color: 0x2a1b12 });
+        const sightMat = new THREE.MeshBasicMaterial({ color: 0x33ff33 });
+
+        const bodyGeo = new THREE.BoxGeometry(0.08, 0.12, 0.5);
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.set(0, 0, -0.1);
+        group.add(body);
+
+        const barrelGeo = new THREE.BoxGeometry(0.04, 0.04, 0.5);
+        const barrel = new THREE.Mesh(barrelGeo, darkMetalMat);
+        barrel.position.set(0, 0.02, -0.6);
+        group.add(barrel);
+
+        const stockGeo = new THREE.BoxGeometry(0.06, 0.15, 0.3);
+        const stock = new THREE.Mesh(stockGeo, stockMat);
+        stock.position.set(0, -0.05, 0.3);
+        group.add(stock);
+
+        const handleGeo = new THREE.BoxGeometry(0.05, 0.2, 0.08);
+        const handle = new THREE.Mesh(handleGeo, stockMat);
+        handle.position.set(0, -0.15, 0.1);
+        handle.rotation.x = Math.PI / 8;
+        group.add(handle);
+
+        const magGeo = new THREE.BoxGeometry(0.06, 0.25, 0.12);
+        const mag = new THREE.Mesh(magGeo, darkMetalMat);
+        mag.position.set(0, -0.2, -0.1);
+        mag.rotation.x = -Math.PI / 16;
+        group.add(mag);
+
+        const sightGeo = new THREE.BoxGeometry(0.015, 0.03, 0.02);
+        const sight = new THREE.Mesh(sightGeo, sightMat);
+        sight.position.set(0, 0.075, -0.8);
+        group.add(sight);
+
+        return group;
+    }
+
     shoot(ghosts, vrController = null) {
         if (!this.canShoot) return;
+
+        if (this.currentAmmo <= 0 && this.currentType !== 'pistol') {
+            this.equip('pistol');
+            return;
+        }
 
         // 1. Riproduci audio e applica cooldown
         if (this.shootSound.isPlaying) this.shootSound.stop();
         if (this.shootSound.buffer) this.shootSound.play();
         
         this.canShoot = false;
-        setTimeout(() => { this.canShoot = true; }, this.fireRate);
+        setTimeout(() => { this.canShoot = true; }, this.stats[this.currentType].fireRate);
+
+        if (this.currentType !== 'pistol') {
+            this.currentAmmo--;
+        }
 
         // 2. Anima leggermente l'arma per il rinculo
-        this.mesh.position.z += 0.1;
-        this.mesh.rotation.x += 0.1;
+        const recoilZ = this.currentType === 'rifle' ? 0.05 : 0.1;
+        const recoilX = this.currentType === 'rifle' ? 0.05 : 0.1;
+        
+        this.mesh.position.z += recoilZ;
+        this.mesh.rotation.x += recoilX;
         setTimeout(() => { 
-            this.mesh.position.z -= 0.1; 
-            this.mesh.rotation.x -= 0.1; 
+            this.mesh.position.z -= recoilZ; 
+            this.mesh.rotation.x -= recoilX; 
         }, 100);
 
-        // 3. Raycasting: Controlla da dove spariamo
+        // 3. Raycasting
         if (vrController) {
-            // Modalità VR: estrai posizione e direzione dal controller VR
             const position = new THREE.Vector3();
             const direction = new THREE.Vector3(0, 0, -1);
-            
             position.setFromMatrixPosition(vrController.matrixWorld);
             direction.transformDirection(vrController.matrixWorld).normalize();
-            
             this.raycaster.set(position, direction);
         } else {
-            // Modalità Flat: spara dal centro della telecamera
             this.raycaster.setFromCamera(this.centerScreen, this.camera);
         }
         
-        // Estraiamo le mesh dei fantasmi per il raycaster
         const ghostMeshes = ghosts.map(g => g.mesh);
         const intersects = this.raycaster.intersectObjects(ghostMeshes, true);
 
@@ -110,7 +182,7 @@ export class Weapon {
             const hitGhost = ghosts.find(g => g.mesh === hitMesh || g.mesh.children.includes(hitMesh));
             
             if (hitGhost) {
-                console.log("Fantasma colpito e stordito!");
+                console.log("Bersaglio colpito con:", this.currentType);
                 hitGhost.takeDamage();
             }
         }

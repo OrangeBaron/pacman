@@ -7,6 +7,7 @@ import { Environment } from './Environment.js';
 import { CoinManager } from './CoinManager.js';
 import { Player } from './Player.js';
 import { Weapon } from './Weapon.js';
+import { WeaponManager } from './WeaponManager.js';
 
 // --- SETUP BASE ---
 const scene = new THREE.Scene();
@@ -83,6 +84,7 @@ for (let z = 0; z < levelMap.length; z++) {
 
 // --- INIZIALIZZAZIONE MANAGER ---
 const coinManager = new CoinManager(scene, levelMap, audioListener, ghosts, playerWorldPos);
+const weaponManager = new WeaponManager(scene, levelMap, audioListener, ghosts, weapon);
 
 // --- GAME LOOP ---
 const clock = new THREE.Clock();
@@ -95,6 +97,7 @@ function animate() {
     camera.getWorldPosition(playerWorldPos);
 
     coinManager.update(delta, playerWorldPos);
+    weaponManager.update(delta, playerWorldPos);
     environment.shaderUniforms.u_playerPosition.value.copy(playerWorldPos);
 
     let isAnyGhostHunting = false;
