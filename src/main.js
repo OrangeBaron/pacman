@@ -31,7 +31,7 @@ camera.add(audioListener);
 const audioLoader = new THREE.AudioLoader();
 
 const explorationMusic = new THREE.Audio(audioListener);
-audioLoader.load('../assets/exploration.mp3', (buffer) => {
+audioLoader.load('./assets/exploration.mp3', (buffer) => {
     explorationMusic.setBuffer(buffer);
     explorationMusic.setLoop(true);
     explorationMusic.setVolume(0.1);
@@ -39,7 +39,7 @@ audioLoader.load('../assets/exploration.mp3', (buffer) => {
 });
 
 const chaseMusic = new THREE.Audio(audioListener);
-audioLoader.load('../assets/chase.mp3', (buffer) => {
+audioLoader.load('./assets/chase.mp3', (buffer) => {
     chaseMusic.setBuffer(buffer);
     chaseMusic.setLoop(true);
     chaseMusic.setVolume(0.1);

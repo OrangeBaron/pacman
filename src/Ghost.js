@@ -44,20 +44,20 @@ export class Ghost {
         this.audioAlert = new THREE.PositionalAudio(audioListener);
         
         const audioLoader = new THREE.AudioLoader();
-        audioLoader.load('../assets/normal.mp3', (buffer) => {
+        audioLoader.load('./assets/normal.mp3', (buffer) => {
             this.audioNormal.setBuffer(buffer);
             this.audioNormal.setRefDistance(3);
             this.audioNormal.setLoop(true);
             if (this.state !== 'HUNT' && this.state !== 'STUNNED') this.audioNormal.play();
         });
 
-        audioLoader.load('../assets/fast.mp3', (buffer) => {
+        audioLoader.load('./assets/fast.mp3', (buffer) => {
             this.audioFast.setBuffer(buffer);
             this.audioFast.setRefDistance(5);
             this.audioFast.setLoop(true);
         });
 
-        audioLoader.load('../assets/alert.mp3', (buffer) => {
+        audioLoader.load('./assets/alert.mp3', (buffer) => {
             this.audioAlert.setBuffer(buffer);
             this.audioAlert.setRefDistance(5);
             this.audioAlert.setLoop(false);

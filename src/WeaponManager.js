@@ -11,7 +11,7 @@ export class WeaponManager {
         // --- SETUP AUDIO RACCOLTA ---
         this.pickupSound = new THREE.Audio(audioListener);
         const audioLoader = new THREE.AudioLoader();
-        audioLoader.load('../assets/pickup.mp3', (buffer) => {
+        audioLoader.load('./assets/pickup.mp3', (buffer) => {
             this.pickupSound.setBuffer(buffer);
             this.pickupSound.setVolume(0.6);
         });

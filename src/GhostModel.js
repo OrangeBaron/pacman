@@ -39,10 +39,10 @@ export function createGhostMesh() {
     // Faccia e texture
     const textureLoader = new THREE.TextureLoader();
     const textures = {
-        normal: textureLoader.load('../assets/normal.png'),
-        curious: textureLoader.load('../assets/curious.png'),
-        angry: textureLoader.load('../assets/angry.png'),
-        stunned: textureLoader.load('../assets/stunned.png')
+        normal: textureLoader.load('./assets/normal.png'),
+        curious: textureLoader.load('./assets/curious.png'),
+        angry: textureLoader.load('./assets/angry.png'),
+        stunned: textureLoader.load('./assets/stunned.png')
     };
     
     const faceGeo = new THREE.PlaneGeometry(0.6, 0.6);

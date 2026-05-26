@@ -11,7 +11,7 @@ export class CoinManager {
         // --- SETUP AUDIO DELLA MONETA ---
         this.coinSound = new THREE.Audio(audioListener);
         const audioLoader = new THREE.AudioLoader();
-        audioLoader.load('../assets/coin.mp3', (buffer) => {
+        audioLoader.load('./assets/coin.mp3', (buffer) => {
             this.coinSound.setBuffer(buffer);
             this.coinSound.setVolume(0.4);
         });

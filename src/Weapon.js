@@ -16,7 +16,7 @@ export class Weapon {
         // -- Setup Audio --
         this.shootSound = new THREE.Audio(audioListener);
         const audioLoader = new THREE.AudioLoader();
-        audioLoader.load('../assets/shoot.mp3', (buffer) => {
+        audioLoader.load('./assets/shoot.mp3', (buffer) => {
             this.shootSound.setBuffer(buffer);
             this.shootSound.setVolume(0.5);
         });
