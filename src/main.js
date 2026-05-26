@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { generateMaze } from './maze.js';
 import { Ghost } from './Ghost.js';
-import { CONFIG, OFFSET } from './config.js';
+import { CONFIG, OFFSET, STATS } from './config.js';
 import { Environment } from './Environment.js';
 import { CoinManager } from './CoinManager.js';
 import { Player } from './Player.js';
@@ -42,6 +42,20 @@ audioLoader.load('./assets/chase.mp3', (buffer) => {
     chaseMusic.setBuffer(buffer);
     chaseMusic.setLoop(true);
     chaseMusic.setVolume(0.1);
+});
+
+const winMusic = new THREE.Audio(audioListener);
+audioLoader.load('./assets/win.mp3', (buffer) => {
+    winMusic.setBuffer(buffer);
+    winMusic.setLoop(false);
+    winMusic.setVolume(0.4);
+});
+
+const loseMusic = new THREE.Audio(audioListener);
+audioLoader.load('./assets/lose.mp3', (buffer) => {
+    loseMusic.setBuffer(buffer);
+    loseMusic.setLoop(false);
+    loseMusic.setVolume(0.4);
 });
 
 // --- GENERAZIONE MONDO ---
@@ -99,7 +113,52 @@ const weaponManager = new WeaponManager(scene, levelMap, audioListener, ghosts, 
 
 // --- GESTIONE AVVIO PARTITA ---
 let gameStarted = false;
+let isGameOver = false;
 const clock = new THREE.Clock();
+
+// Funzione richiamata per la Vittoria
+function triggerWin() {
+    if (isGameOver) return;
+    isGameOver = true;
+    
+    if (explorationMusic.isPlaying) explorationMusic.pause();
+    if (chaseMusic.isPlaying) chaseMusic.pause();
+    ghosts.forEach(ghost => ghost.stopAllAudio());
+    
+    if (winMusic.buffer && !winMusic.isPlaying) winMusic.play();
+    
+    console.log("VITTORIA! Tutte le monete raccolte!");
+    showEndGameBoard(true); 
+}
+
+// Funzione richiamata per la Sconfitta
+function triggerGameOver() {
+    if (isGameOver) return;
+    isGameOver = true;
+    
+    if (explorationMusic.isPlaying) explorationMusic.pause();
+    if (chaseMusic.isPlaying) chaseMusic.pause();
+    ghosts.forEach(ghost => ghost.stopAllAudio());
+    
+    if (loseMusic.buffer && !loseMusic.isPlaying) loseMusic.play();
+    
+    console.log("SCONFITTA! Preso da un fantasma!");
+    showEndGameBoard(false); 
+}
+
+// Placeholder per la Fase 3
+function showEndGameBoard(isVictory) {
+    console.log(`--- STATISTICHE PARTITA ---`);
+    console.log(`Esito: ${isVictory ? "VITTORIA" : "GAME OVER"}`);
+    console.log(`Monete: ${STATS.coinsCollected} / ${STATS.totalCoins}`);
+    console.log(`Volte scoperto: ${STATS.timesDiscovered}`);
+    console.log(`Fantasmi storditi: ${STATS.ghostsDefeated}`);
+    
+    const accuracy = STATS.shotsFired > 0 
+        ? Math.round((STATS.shotsHit / STATS.shotsFired) * 100) 
+        : 0;
+    console.log(`Proiettili sparati: ${STATS.shotsFired} (Precisione: ${accuracy}%)`);
+}
 
 function startGame() {
     if (gameStarted) return;
@@ -127,28 +186,46 @@ renderer.xr.addEventListener('sessionstart', startGame);
 function animate() {
     const delta = clock.getDelta();
 
-    // Aggiorna la logica SOLO se il giocatore ha interagito
-    if (gameStarted) {
+    if (gameStarted && !isGameOver) {
         player.update(delta, ghosts);
         camera.getWorldPosition(playerWorldPos);
 
         coinManager.update(delta, playerWorldPos);
         weaponManager.update(delta, playerWorldPos);
 
+        // --- CONTROLLO VITTORIA ---
+        if (STATS.totalCoins > 0 && STATS.coinsCollected >= STATS.totalCoins) {
+            triggerWin();
+        }
+
         let isAnyGhostHunting = false;
 
         for (let i = 0; i < ghosts.length; i++) {
             ghosts[i].update(delta, playerWorldPos);
+            
+            // --- CONTROLLO SCONFITTA ---
+            if (ghosts[i].state !== 'STUNNED') {
+                const dist = Math.hypot(
+                    playerWorldPos.x - ghosts[i].mesh.position.x,
+                    playerWorldPos.z - ghosts[i].mesh.position.z
+                );
+                
+                if (dist < 1.0) {
+                    triggerGameOver();
+                }
+            }
+
             if (ghosts[i].state === 'HUNT') isAnyGhostHunting = true;
         }
 
-        // Gestione transizione audio dinamica
-        if (isAnyGhostHunting) {
-            if (explorationMusic.isPlaying) explorationMusic.pause();
-            if (chaseMusic.buffer && !chaseMusic.isPlaying) chaseMusic.play();
-        } else {
-            if (chaseMusic.isPlaying) chaseMusic.pause();
-            if (explorationMusic.buffer && !explorationMusic.isPlaying) explorationMusic.play();
+        if (!isGameOver) {
+            if (isAnyGhostHunting) {
+                if (explorationMusic.isPlaying) explorationMusic.pause();
+                if (chaseMusic.buffer && !chaseMusic.isPlaying) chaseMusic.play();
+            } else {
+                if (chaseMusic.isPlaying) chaseMusic.pause();
+                if (explorationMusic.buffer && !explorationMusic.isPlaying) explorationMusic.play();
+            }
         }
     }
 

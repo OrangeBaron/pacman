@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Pathfinding } from './Pathfinding.js';
 import { createGhostMesh } from './GhostModel.js';
+import { STATS } from './config.js';
 
 export class Ghost {
     constructor(scene, startX, startZ, cellSize, offsetX, offsetZ, levelMap, audioListener) {
@@ -71,6 +72,12 @@ export class Ghost {
         this.mesh.add(this.audioAlert);
     }
 
+    stopAllAudio() {
+        if (this.audioNormal && this.audioNormal.isPlaying) this.audioNormal.pause();
+        if (this.audioFast && this.audioFast.isPlaying) this.audioFast.pause();
+        if (this.audioAlert && this.audioAlert.isPlaying) this.audioAlert.pause();
+    }
+
     onGameStart() {
         this.gameStarted = true;
         if (this.audioNormal.buffer && !this.audioNormal.isPlaying && this.state !== 'HUNT' && this.state !== 'STUNNED') {
@@ -81,12 +88,19 @@ export class Ghost {
     takeDamage() {
         // Se non è già stordito, cambia lo stato
         if (this.state !== 'STUNNED') {
+            STATS.ghostsDefeated++;
             this.changeState('STUNNED');
         }
     }
 
     changeState(newState) {
         if (this.state === newState) return; 
+        
+        // Se passiamo a HUNT da un altro stato, significa che ci ha scoperti
+        if (newState === 'HUNT' && this.state !== 'HUNT') {
+            STATS.timesDiscovered++;
+        }
+
         this.state = newState;
 
         // Reset visivo base per tutti gli stati normali

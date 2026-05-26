@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { STATS } from './config.js';
 
 export class Weapon {
     constructor(camera, audioListener) {
@@ -146,6 +147,9 @@ export class Weapon {
         if (this.shootSound.buffer) this.shootSound.play();
         
         this.canShoot = false;
+        
+        STATS.shotsFired++; 
+
         setTimeout(() => { this.canShoot = true; }, this.stats[this.currentType].fireRate);
 
         if (this.currentType !== 'pistol') {
@@ -196,6 +200,8 @@ export class Weapon {
                     console.log("Bersaglio colpito con:", this.currentType);
                     hitGhost.takeDamage();
                     hitGhosts.add(hitGhost);
+                    
+                    STATS.shotsHit++;
                 }
             } else if (hitMesh.material && hitMesh.material.type === 'ShaderMaterial') {
                 break;

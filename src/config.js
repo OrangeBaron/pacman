@@ -16,3 +16,12 @@ export const OFFSET = {
     X: -Math.floor(CONFIG.MAP_SIZE / 2),
     Z: -Math.floor(CONFIG.MAP_SIZE / 2)
 };
+
+export const STATS = {
+    totalCoins: 0,
+    coinsCollected: 0,
+    timesDiscovered: 0,
+    ghostsDefeated: 0,
+    shotsFired: 0,
+    shotsHit: 0
+};
