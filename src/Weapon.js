@@ -75,7 +75,7 @@ export class Weapon {
         const handleGeo = new THREE.BoxGeometry(0.06, 0.2, 0.1);
         const handle = new THREE.Mesh(handleGeo, gripMat);
         handle.position.set(0, -0.14, 0.05);
-        handle.rotation.x = Math.PI / 8;
+        handle.rotation.x = -Math.PI / 8;
         group.add(handle);
 
         const guardGeo = new THREE.BoxGeometry(0.01, 0.08, 0.1);
@@ -116,13 +116,13 @@ export class Weapon {
         const handleGeo = new THREE.BoxGeometry(0.05, 0.2, 0.08);
         const handle = new THREE.Mesh(handleGeo, stockMat);
         handle.position.set(0, -0.15, 0.1);
-        handle.rotation.x = Math.PI / 8;
+        handle.rotation.x = -Math.PI / 8;
         group.add(handle);
 
         const magGeo = new THREE.BoxGeometry(0.06, 0.25, 0.12);
         const mag = new THREE.Mesh(magGeo, darkMetalMat);
         mag.position.set(0, -0.2, -0.1);
-        mag.rotation.x = -Math.PI / 16;
+        mag.rotation.x = Math.PI / 16;
         group.add(mag);
 
         const sightGeo = new THREE.BoxGeometry(0.015, 0.03, 0.02);
