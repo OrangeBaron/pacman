@@ -44,6 +44,7 @@ Il gioco è uno sparatutto in prima persona (FPS) a tema dark-horror basato su P
 
 ### 🖥️ Interfaccia ed End-Game (Work In Progress)
 
-- [ ] **DA FARE - UI / HUD (User Interface):** Aggiungere a schermo (o attaccato al polso in VR) il conteggio delle monete rimanenti e delle munizioni dell'arma speciale.
+- [ ] DA FARE - UI / HUD (User Interface): Aggiungere a schermo (o attaccato al polso in VR) il conteggio delle monete rimanenti e delle munizioni dell'arma speciale.
+- [ ] DA FARE - UI End-Game: Implementare una schermata (overlay o pannello 3D) che mostri a video il tabellone riassuntivo delle statistiche (monete raccolte, precisione, ecc.) al posto della semplice stampa in console.
 - [x] **VITTORIA:** Implementato il trigger di vittoria e la gestione della musica/stato quando tutte le monete vengono raccolte.
 - [x] **GAME OVER:** Implementata la collisione letale con i fantasmi e la gestione della musica/stato di sconfitta.
