@@ -133,7 +133,7 @@ export class Weapon {
         return group;
     }
 
-    shoot(ghosts, vrController = null) {
+    shoot(ghosts, scene, vrController = null) {
         if (!this.canShoot) return;
 
         if (this.currentAmmo <= 0 && this.currentType !== 'pistol') {
@@ -174,16 +174,31 @@ export class Weapon {
             this.raycaster.setFromCamera(this.centerScreen, this.camera);
         }
         
-        const ghostMeshes = ghosts.map(g => g.mesh);
-        const intersects = this.raycaster.intersectObjects(ghostMeshes, true);
+        const intersects = this.raycaster.intersectObject(scene, true);
 
-        if (intersects.length > 0) {
-            const hitMesh = intersects[0].object;
+        const hitGhosts = new Set();
+        
+        for (let i = 0; i < intersects.length; i++) {
+            const hitMesh = intersects[i].object;
+            
+            let isWeapon = false;
+            let obj = hitMesh;
+            while(obj) {
+                if (obj === this.mesh) { isWeapon = true; break; }
+                obj = obj.parent;
+            }
+            if (isWeapon) continue;
+
             const hitGhost = ghosts.find(g => g.mesh === hitMesh || g.mesh.children.includes(hitMesh));
             
             if (hitGhost) {
-                console.log("Bersaglio colpito con:", this.currentType);
-                hitGhost.takeDamage();
+                if (!hitGhosts.has(hitGhost)) {
+                    console.log("Bersaglio colpito con:", this.currentType);
+                    hitGhost.takeDamage();
+                    hitGhosts.add(hitGhost);
+                }
+            } else if (hitMesh.material && hitMesh.material.type === 'ShaderMaterial') {
+                break;
             }
         }
 

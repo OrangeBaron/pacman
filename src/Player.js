@@ -161,7 +161,7 @@ export class Player {
             
             if (shouldShoot) {
                 const activeController = this.renderer.xr.isPresenting ? this.rightController : null;
-                this.weapon.shoot(ghosts, activeController);
+                this.weapon.shoot(ghosts, this.scene, activeController);
             }
         }
         this.triggerPressedThisFrame = false;
