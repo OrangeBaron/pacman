@@ -1,12 +1,11 @@
 export const vertexShader = `
     varying vec3 vWorldPosition;
-    varying vec3 vNormal; // AGGIUNTO: Passiamo la normale della superficie
+    varying vec3 vNormal;
 
     void main() {
         vec4 worldPosition = modelMatrix * vec4(position, 1.0);
         vWorldPosition = worldPosition.xyz;
         
-        // Calcoliamo verso dove "guarda" la faccia del modello nel mondo 3D
         vNormal = normalize(mat3(modelMatrix) * normal);
         
         gl_Position = projectionMatrix * viewMatrix * worldPosition;
@@ -26,7 +25,7 @@ export const fragmentShader = `
     uniform vec2 u_gridOffset;
     
     varying vec3 vWorldPosition;
-    varying vec3 vNormal; // AGGIUNTO: Riceviamo la normale
+    varying vec3 vNormal;
 
     float random(vec3 st) {
         return fract(sin(dot(st.xyz, vec3(12.9898, 78.233, 37.719))) * 43758.5453123);
@@ -62,16 +61,14 @@ export const fragmentShader = `
     void main() {
         vec3 albedo;
         
-        // Determiniamo se la superficie è un pavimento/soffitto (normale verticale) o un muro (normale orizzontale)
         float isFloorOrCeiling = step(0.5, abs(vNormal.y));
 
-        // Creiamo una "porosità" globale per la pietra (grana)
         float rockGrain = (random(vWorldPosition * 15.0) - 0.5) * 0.15;
 
         if (isFloorOrCeiling > 0.0) {
             // --- PATTERN PAVIMENTO E SOFFITTO ---
             // Grosse lastre quadrate
-            vec2 pos2D = vWorldPosition.xz * 0.6; // Più grandi dei mattoni
+            vec2 pos2D = vWorldPosition.xz * 0.6;
             vec2 localPos = fract(pos2D);
             vec2 blockId = floor(pos2D);
 
@@ -119,7 +116,7 @@ export const fragmentShader = `
             albedo = mix(stoneColor, mortarColor, mortar);
         }
 
-        // --- CALCOLO LUCI (Identico alla versione precedente) ---
+        // --- CALCOLO LUCI ---
         float distToPlayer = length(vWorldPosition - u_playerPosition);
         float playerAura = smoothstep(10.0, 0.0, distToPlayer) * 1.2; 
         vec3 baseLight = vec3(0.02) + vec3(playerAura);
