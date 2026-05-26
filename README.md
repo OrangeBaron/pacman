@@ -1,51 +1,49 @@
-# Game Design Document: Pacman VR FPS
+# Pacman VR FPS - Roadmap & To-Do
 
-## 1. Concept e Panoramica
+## Concept e Panoramica
 
-Il gioco è uno sparatutto in prima persona (FPS) a tema dark-horror basato su Pacman. È sviluppato in VR utilizzando WebXR e Three.js, ma mantiene la retrocompatibilità con i controlli "flat" tradizionali (tramite WASD e mouse).
+Il gioco è uno sparatutto in prima persona (FPS) a tema dark-horror basato su Pacman. È sviluppato in VR utilizzando WebXR e Three.js, mantenendo però la retrocompatibilità con i controlli "flat" tradizionali (tramite WASD e mouse).
 
-## 2. Obiettivi e Condizioni di Gioco
+---
 
-* **Inizio Partita:** Il livello si avvia nel momento in cui il giocatore raccoglie la pistola che fluttua davanti a lui.
+## 📋 Stato di Sviluppo (To-Do List)
 
-* **Condizione di Vittoria:** Per superare il livello, il giocatore deve esplorare la mappa e raccogliere tutte le monete.
+### 🚀 Core & Inizio Partita
 
-* **Condizione di Sconfitta (Game Over):** Il giocatore perde istantaneamente la partita se viene toccato da uno dei quattro fantasmi.
+- [x] Setup dell'ambiente VR (WebXR) e della camera rig.
+- [x] Controlli Flat PC (PointerLock, WASD + mouse).
+- [x] Mappe Procedurali: Generazione del livello stile labirinto con algoritmo Recursive Backtracking.
+- [ ] **DA FARE - Inizio Partita:** Bloccare il movimento del giocatore e mettere in pausa i fantasmi finché non si interagisce/raccoglie la pistola fluttuante iniziale.
 
-## 3. Level Design e Generazione
+### 🔫 Arsenale & Gameplay
 
-* **Mappe Procedurali:** I livelli sono di forma quadrata e generati proceduralmente in stile labirinto di Pacman, omettendo però i passaggi "warp" attraverso le pareti esterne.
+- [x] **Arma Base (Pistola):** Rateo di fuoco lento, munizioni infinite.
+- [x] **Armi Speciali (Fucili):** Generati proceduralmente sulla mappa. Sparano in automatico, hanno un solo caricatore, dopodiché si torna alla pistola.
+- [x] Gestione dello shooting (Raycasting) funzionante sia da controller VR che da cursore (Flat).
+- [x] Raccolta monete: Generazione sulla mappa e logica di raccolta alla vicinanza.
 
-* **Difficoltà Personalizzabile:** I livelli di difficoltà del gioco sono determinati dalla personalizzazione di diversi parametri, tra cui: dimensione del labirinto, numero delle armi, numero di fantasmi e la velocità di movimento di questi ultimi.
+### 👻 Intelligenza Artificiale (I Fantasmi)
 
-## 4. Arsenale
+- [x] **Pathfinding A*:** Navigazione della mappa calcolata dinamicamente.
+- [x] **Stato Normale (Pattugliamento):** Camminata casuale con cono di vista bianco e audio di base.
+- [x] **Stato di Allerta (Indagine):** Il fantasma sente un rumore (es. raccolta moneta o spari), l'espressione diventa "curiosa" e la luce gialla. Va verso l'origine del rumore.
+- [x] **Stato di Caccia:** Se il fantasma vede il giocatore, la luce diventa rossa, l'espressione "cattiva" e parte l'inseguimento.
+- [x] **Stato Sconfitto (Stun):** Se colpito, diventa inoffensivo/blu e corre verso il centro del labirinto per rigenerarsi.
 
-* **Arma Base (Pistola):** Ha un rateo di fuoco lento ma è dotata di munizioni infinite. È l'arma con cui si inizia e quella a cui si torna quando si esauriscono le munizioni delle armi speciali.
+### 🎵 Meccaniche Sonore (Stealth)
 
-* **Armi Speciali (Fucili Automatici):** Sparsi per il livello sono disponibili quattro fucili automatici. Ciascuno ha a disposizione un solo caricatore; una volta esaurito, l'arma si scarica e si torna a usare la pistola base.
+- [x] Spazializzazione audio 3D (AudioListener su camera).
+- [x] **Rumore Basso:** Raccogliere monete allerta solo i fantasmi vicini.
+- [x] **Rumore Alto:** Sparare o raccogliere armi allerta i fantasmi su scala più ampia.
+- [x] Musiche dinamiche (passaggio da tema di esplorazione a tema di inseguimento).
 
-## 5. Meccaniche Sonore e Stealth
+### 🎨 Grafica & Ottimizzazione
+- [x] Stile visivo low-poly cel-shaded con colori uniformi.
+- [x] Sistema di illuminazione custom (ShaderMaterial): zero luci dinamiche native per garantire i 90+ fps in VR.
+- [x] Projective texturing: le luci dei fantasmi (Cono visivo) e delle armi calcolano dinamicamente gli ostacoli in un custom Fragment Shader per simulare le ombre.
 
-Ogni azione nel labirinto produce un livello di rumore che può allertare i nemici:
+### 🖥️ Interfaccia ed End-Game (Work In Progress)
 
-* **Rumore Basso:** Raccogliere le monete produce un suono udibile dai fantasmi solo nelle immediate vicinanze.
-
-* **Rumore Alto:** Raccogliere un'arma da terra o esplodere dei colpi genera un suono che si propaga ed è udibile in tutto quanto il labirinto.
-
-## 6. Intelligenza Artificiale (I Fantasmi)
-
-I fantasmi, che fungono da nemici, sono esteticamente tutti bianchi e uguali, privi di personalità individuali. Il loro comportamento è governato da quattro stati distinti:
-
-* **Stato Normale (Pattugliamento):** I fantasmi camminano a caso nel labirinto. Proiettano una luce frontale bianca che indica il loro cono di vista (con un FOV di 90°).
-
-* **Stato di Allerta (Indagine):** Quando un fantasma sente un rumore, la sua espressione diventa "curiosa" e la sua luce si colora di giallo. In questa fase, inizia a camminare verso il luogo del rumore sfruttando l'algoritmo di pathfinding A*.
-
-* **Stato di Caccia:** Se il fantasma riesce a vedere il giocatore, assume un'espressione "cattiva", la sua luce diventa rossa e inizia a correre verso l'ultima posizione nota del giocatore.
-
-* **Stato Sconfitto:** Il giocatore può neutralizzare i fantasmi sparandogli. Se colpiti, questi perdono la loro letalità, diventano di colore blu e tornano in modo inoffensivo verso la loro base centrale per ricaricarsi.
-
-## 7. Grafica e Ottimizzazione Tecnica
-
-* **Stile Visivo:** Il gioco usa un'estetica low-poly con effetto cel-shading. Le superfici non hanno texture complesse, ma adottano colori uniformi per massimizzare le prestazioni.
-
-* **Illuminazione:** Per risparmiare risorse e mantenere i framerate alti in VR, non vengono calcolate luci in tempo reale. Invece delle tradizionali ombre dinamiche, il motore sfrutta il *projective texturing*.
+- [ ] **DA FARE - UI / HUD (User Interface):** Aggiungere a schermo (o attaccato al polso in VR) il conteggio delle monete rimanenti e delle munizioni dell'arma speciale.
+- [ ] **DA FARE - Condizione di Vittoria:** Implementare la schermata e il trigger di vittoria quando tutte le monete della `CoinManager` vengono raccolte.
+- [ ] **DA FARE - Condizione di Sconfitta (Game Over):** Implementare la morte istantanea alla collisione col modello del fantasma (quando non è in stato 'stunned') e schermata di riavvio.
