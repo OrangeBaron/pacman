@@ -13,7 +13,6 @@ Il gioco è uno sparatutto in prima persona (FPS) a tema dark-horror basato su P
 - [x] Setup dell'ambiente VR (WebXR) e della camera rig.
 - [x] Controlli Flat PC (PointerLock, WASD + mouse).
 - [x] Mappe Procedurali: Generazione del livello stile labirinto con algoritmo Recursive Backtracking.
-- [ ] **DA FARE - Inizio Partita:** Bloccare il movimento del giocatore e mettere in pausa i fantasmi finché non si interagisce/raccoglie la pistola fluttuante iniziale.
 
 ### 🔫 Arsenale & Gameplay
 
@@ -38,6 +37,7 @@ Il gioco è uno sparatutto in prima persona (FPS) a tema dark-horror basato su P
 - [x] Musiche dinamiche (passaggio da tema di esplorazione a tema di inseguimento).
 
 ### 🎨 Grafica & Ottimizzazione
+
 - [x] Stile visivo low-poly cel-shaded con colori uniformi.
 - [x] Sistema di illuminazione custom (ShaderMaterial): zero luci dinamiche native per garantire i 90+ fps in VR.
 - [x] Projective texturing: le luci dei fantasmi (Cono visivo) e delle armi calcolano dinamicamente gli ostacoli in un custom Fragment Shader per simulare le ombre.
