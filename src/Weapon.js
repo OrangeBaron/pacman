@@ -27,19 +27,43 @@ export class Weapon {
 
     createModel() {
         const group = new THREE.Group();
-        const material = new THREE.MeshBasicMaterial({ color: 0x222222 });
 
-        const barrelGeo = new THREE.BoxGeometry(0.1, 0.1, 0.4);
-        const barrel = new THREE.Mesh(barrelGeo, material);
-        barrel.position.z = -0.1;
+        // Definiamo diversi materiali per dare contrasto all'arma
+        const darkMetalMat = new THREE.MeshBasicMaterial({ color: 0x2b2b2b });
+        const lightMetalMat = new THREE.MeshBasicMaterial({ color: 0x4a4a4a });
+        const gripMat = new THREE.MeshBasicMaterial({ color: 0x3e2723 });
+        const sightMat = new THREE.MeshBasicMaterial({ color: 0xff3333 });
+
+        // 1. Canna / Corpo principale (Grigio scuro)
+        const barrelGeo = new THREE.BoxGeometry(0.07, 0.08, 0.4);
+        const barrel = new THREE.Mesh(barrelGeo, darkMetalMat);
+        barrel.position.set(0, 0, -0.1);
         group.add(barrel);
 
-        const handleGeo = new THREE.BoxGeometry(0.1, 0.2, 0.1);
-        const handle = new THREE.Mesh(handleGeo, material);
-        handle.position.y = -0.15;
-        handle.position.z = 0.05;
+        // 2. Carrello superiore (Grigio più chiaro e leggermente più largo)
+        const slideGeo = new THREE.BoxGeometry(0.08, 0.04, 0.42);
+        const slide = new THREE.Mesh(slideGeo, lightMetalMat);
+        slide.position.set(0, 0.06, -0.11);
+        group.add(slide);
+
+        // 3. Impugnatura / Grip (Marrone)
+        const handleGeo = new THREE.BoxGeometry(0.06, 0.2, 0.1);
+        const handle = new THREE.Mesh(handleGeo, gripMat);
+        handle.position.set(0, -0.14, 0.05);
         handle.rotation.x = Math.PI / 8;
         group.add(handle);
+
+        // 4. Guardia del grilletto (Sotto la canna, davanti all'impugnatura)
+        const guardGeo = new THREE.BoxGeometry(0.01, 0.08, 0.1);
+        const guard = new THREE.Mesh(guardGeo, darkMetalMat);
+        guard.position.set(0, -0.06, -0.03);
+        group.add(guard);
+
+        // 5. Mirino (Piccolo punto rosso sulla punta della canna)
+        const sightGeo = new THREE.BoxGeometry(0.015, 0.03, 0.02);
+        const sight = new THREE.Mesh(sightGeo, sightMat);
+        sight.position.set(0, 0.09, -0.3);
+        group.add(sight);
 
         return group;
     }
