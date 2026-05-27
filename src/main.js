@@ -93,13 +93,23 @@ function initUI() {
 }
 
 function cleanUpScene() {
+    // Se esiste un vecchio player, distruggiamo il suo riferimento all'arma
+    if (player) {
+        player.weapon = null;
+    }
+
+    // Rimuoviamo forzatamente il modello dell'arma precedente ovunque si trovi
+    if (weapon && weapon.mesh && weapon.mesh.parent) {
+        weapon.mesh.parent.remove(weapon.mesh);
+    }
+
     // Svuotiamo brutalmente la scena per evitare memory leak tra una partita e l'altra
     scene.clear();
     scene.background = new THREE.Color(CONFIG.COLORS.BG);
     scene.add(playerRig);
     
-    // Rimuoviamo eventuali armi o pannelli di game over attaccati alla telecamera
-    // Facendo attenzione a NON rimuovere l'AudioListener
+    // Rimuoviamo eventuali elementi o pannelli di game over attaccati alla telecamera
+    // (Facendo attenzione a NON rimuovere l'AudioListener)
     for (let i = camera.children.length - 1; i >= 0; i--) {
         const child = camera.children[i];
         if (!(child instanceof THREE.AudioListener)) {
