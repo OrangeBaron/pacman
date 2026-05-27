@@ -70,6 +70,7 @@ Tra le caratteristiche considerate o programmate per i prossimi aggiornamenti tr
 - [ ] **Grafica:** Sostituzione delle monete con vari tipi di caramelle.
 - [ ] **Audio:** Sostituzione delle musiche e degli effetti sonori.
 - [ ] **Gamplay:** Introduzione di nuove tipologie di nemici o power-up.
+- [ ] **Mobile/Tablet:** Integrazione comandi a schermo per dispositivi touch.
 
 ---
 
