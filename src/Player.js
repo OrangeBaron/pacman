@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CONFIG, OFFSET } from './config.js';
+import { CONFIG, OFFSET, CURRENT_SETTINGS } from './config.js';
 import { InputManager } from './InputManager.js';
 
 export class Player {
@@ -60,7 +60,6 @@ export class Player {
     }
 
     update(delta, ghosts) {
-        // --- 1. GESTIONE FUOCO ---
         if (this.weapon) {
             const wStats = this.weapon.stats[this.weapon.currentType];
             
@@ -72,7 +71,6 @@ export class Player {
             }
         }
 
-        // --- 2. GESTIONE MOVIMENTO ---
         const { inputX, inputZ } = this.input.getMovementAxes(delta);
         const dirVector = new THREE.Vector2(inputX, inputZ).normalize();
         
@@ -85,8 +83,8 @@ export class Player {
             const right = new THREE.Vector3();
             right.crossVectors(forward, this.camera.up).normalize();
 
-            const moveX = (forward.x * dirVector.y + right.x * dirVector.x) * CONFIG.PLAYER_SPEED * delta;
-            const moveZ = (forward.z * dirVector.y + right.z * dirVector.x) * CONFIG.PLAYER_SPEED * delta;
+            const moveX = (forward.x * dirVector.y + right.x * dirVector.x) * CURRENT_SETTINGS.playerSpeed * delta;
+            const moveZ = (forward.z * dirVector.y + right.z * dirVector.x) * CURRENT_SETTINGS.playerSpeed * delta;
 
             if (!this.isColliding(this.playerRig.position.x + moveX, this.playerRig.position.z)) {
                 this.playerRig.position.x += moveX;
@@ -96,7 +94,6 @@ export class Player {
             }
         }
 
-        // --- 3. RESET DATI FRAME CORRENTE ---
         this.input.resetFrameData();
     }
 }

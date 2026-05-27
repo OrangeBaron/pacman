@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CONFIG, OFFSET } from './config.js';
+import { CONFIG, OFFSET, CURRENT_SETTINGS } from './config.js';
 import { vertexShader, fragmentShader } from './shaders.js';
 
 export class Environment {
@@ -20,25 +20,25 @@ export class Environment {
             u_weaponPositions: { value: Array(4).fill(null).map(() => new THREE.Vector3(0, -100, 0)) },
             u_playerPosition: { value: new THREE.Vector3(0, 0, 0) },
             u_mapTexture: { value: null }, 
-            u_mapSize: { value: CONFIG.MAP_SIZE },
+            u_mapSize: { value: CURRENT_SETTINGS.mapSize },
             u_cellSize: { value: CONFIG.CELL_SIZE },
             u_gridOffset: { value: new THREE.Vector2(OFFSET.X, OFFSET.Z) }
         };
     }
 
     buildMapTexture() {
-        const mapDataRGBA = new Uint8Array(CONFIG.MAP_SIZE * CONFIG.MAP_SIZE * 4);
-        for (let z = 0; z < CONFIG.MAP_SIZE; z++) {
-            for (let x = 0; x < CONFIG.MAP_SIZE; x++) {
+        const mapDataRGBA = new Uint8Array(CURRENT_SETTINGS.mapSize * CURRENT_SETTINGS.mapSize * 4);
+        for (let z = 0; z < CURRENT_SETTINGS.mapSize; z++) {
+            for (let x = 0; x < CURRENT_SETTINGS.mapSize; x++) {
                 let isWall = this.levelMap[z][x] === 1 ? 255 : 0;
-                let index = (z * CONFIG.MAP_SIZE + x) * 4;
+                let index = (z * CURRENT_SETTINGS.mapSize + x) * 4;
                 mapDataRGBA[index] = isWall;     
                 mapDataRGBA[index + 1] = 0;      
                 mapDataRGBA[index + 2] = 0;      
                 mapDataRGBA[index + 3] = 255;    
             }
         }
-        const mapTexture = new THREE.DataTexture(mapDataRGBA, CONFIG.MAP_SIZE, CONFIG.MAP_SIZE, THREE.RGBAFormat);
+        const mapTexture = new THREE.DataTexture(mapDataRGBA, CURRENT_SETTINGS.mapSize, CURRENT_SETTINGS.mapSize, THREE.RGBAFormat);
         mapTexture.magFilter = THREE.NearestFilter;
         mapTexture.minFilter = THREE.NearestFilter;
         mapTexture.needsUpdate = true;
@@ -85,8 +85,7 @@ export class Environment {
             }
         }
 
-        // Soffitto
-        const ceilingGeometry = new THREE.PlaneGeometry(CONFIG.MAP_SIZE * CONFIG.CELL_SIZE, CONFIG.MAP_SIZE * CONFIG.CELL_SIZE);
+        const ceilingGeometry = new THREE.PlaneGeometry(CURRENT_SETTINGS.mapSize * CONFIG.CELL_SIZE, CURRENT_SETTINGS.mapSize * CONFIG.CELL_SIZE);
         const ceilingMaterial = this.createLevelMaterial(CONFIG.COLORS.BG);
         const ceiling = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
         ceiling.rotation.x = Math.PI / 2;

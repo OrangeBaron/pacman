@@ -9,16 +9,121 @@
             margin: 0;
             overflow: hidden;
             background-color: #000;
-            font-family: sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
         }
-        #instructions {
+
+        /* Contenitore principale per la UI (si sovrappone al canvas 3D) */
+        #ui-layer {
             position: absolute;
-            top: 50%;
+            top: 0;
+            left: 0;
             width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 10;
+            backdrop-filter: blur(5px);
+        }
+
+        /* Finestre del Menu */
+        .panel {
+            background: #111;
+            border: 2px solid #3366ff;
+            border-radius: 10px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 0 20px rgba(51, 102, 255, 0.4);
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .panel.active {
+            display: flex;
+        }
+
+        h1, h2 {
             text-align: center;
-            color: #ffffff;
-            pointer-events: none;
-            text-shadow: 1px 1px 2px black;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        h1 { color: #ffff00; text-shadow: 0 0 10px rgba(255, 255, 0, 0.5); }
+
+        /* Stile delle opzioni */
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #222;
+            padding: 10px 15px;
+            border-radius: 5px;
+        }
+
+        .setting-row label {
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #ccc;
+        }
+
+        .setting-row input[type="number"], .setting-row input[type="range"] {
+            background: #000;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 5px;
+            border-radius: 3px;
+            width: 80px;
+            text-align: right;
+        }
+
+        /* Pulsanti */
+        button {
+            background: #3366ff;
+            color: #fff;
+            border: none;
+            padding: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: #5588ff;
+            box-shadow: 0 0 15px rgba(85, 136, 255, 0.6);
+            transform: scale(1.02);
+        }
+        
+        .vr-hint {
+            text-align: center;
+            font-size: 0.85em;
+            color: #aaaaaa;
+            margin-top: -5px;
+            font-style: italic;
+        }
+
+        /* Sfondo rosso in caso di game over */
+        #end-panel.defeat { border-color: #ff3333; box-shadow: 0 0 20px rgba(255, 51, 51, 0.4); }
+        #end-panel.defeat button { background: #ff3333; }
+        #end-panel.defeat button:hover { background: #ff5555; box-shadow: 0 0 15px rgba(255, 85, 85, 0.6); }
+
+        /* Sfondo verde in caso di vittoria */
+        #end-panel.victory { border-color: #33ff33; box-shadow: 0 0 20px rgba(51, 255, 51, 0.4); }
+        #end-panel.victory button { background: #33bb33; }
+        #end-panel.victory button:hover { background: #44dd44; box-shadow: 0 0 15px rgba(68, 221, 68, 0.6); }
+        
+        #end-stats {
+            line-height: 1.6;
+            font-size: 1.1em;
+            text-align: center;
         }
     </style>
     <script type="importmap">
@@ -31,9 +136,52 @@
     </script>
 </head>
 <body>
-    <div id="instructions">
-        Clicca per giocare (WASD + Mouse)<br>
-        Oppure usa il pulsante VR in basso
+
+    <div id="ui-layer">
+        
+        <div id="main-panel" class="panel active">
+            <h1>Pacman VR FPS</h1>
+            
+            <div class="setting-row">
+                <label for="set-mapSize">Dimensione Mappa (dispari)</label>
+                <input type="number" id="set-mapSize" value="21" min="11" max="51" step="2">
+            </div>
+            <div class="setting-row">
+                <label for="set-ghostCount">Numero Fantasmi</label>
+                <input type="number" id="set-ghostCount" value="4" min="0" max="20">
+            </div>
+            <div class="setting-row">
+                <label for="set-weaponCount">Armi (Fucili)</label>
+                <input type="number" id="set-weaponCount" value="4" min="0" max="10">
+            </div>
+            <div class="setting-row">
+                <label for="set-ghostBaseSpeed">Velocità Base Fantasmi</label>
+                <input type="number" id="set-ghostBaseSpeed" value="1.5" min="0.5" max="5.0" step="0.1">
+            </div>
+            <div class="setting-row">
+                <label for="set-ghostHuntSpeed">Velocità Caccia Fantasmi</label>
+                <input type="number" id="set-ghostHuntSpeed" value="2.5" min="1.0" max="8.0" step="0.1">
+            </div>
+            <div class="setting-row">
+                <label for="set-playerSpeed">Velocità Giocatore</label>
+                <input type="number" id="set-playerSpeed" value="2.0" min="1.0" max="8.0" step="0.1">
+            </div>
+            <div class="setting-row">
+                <label for="set-turnSpeed">Velocità Rotazione VR</label>
+                <input type="number" id="set-turnSpeed" value="2.0" min="0.5" max="5.0" step="0.1">
+            </div>
+
+            <button id="btn-start">Gioca (Modalità Flat)</button>
+            <div class="vr-hint">Per giocare in realtà virtuale, clicca sul pulsante "ENTER VR"</div>
+        </div>
+
+        <div id="end-panel" class="panel">
+            <h1 id="end-title">Game Over</h1>
+            <div id="end-stats">
+                </div>
+            <button id="btn-menu">Torna al Menu</button>
+        </div>
+
     </div>
     
     <script type="module" src="./src/main.js"></script>

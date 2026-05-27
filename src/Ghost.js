@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Pathfinding } from './Pathfinding.js';
 import { createGhostMesh } from './GhostModel.js';
-import { STATS } from './config.js';
+import { STATS, CURRENT_SETTINGS } from './config.js';
 
 export class Ghost {
     constructor(scene, startX, startZ, cellSize, offsetX, offsetZ, levelMap, audioManager) {
@@ -10,7 +10,6 @@ export class Ghost {
         this.offsetZ = offsetZ;
         this.levelMap = levelMap;
         
-        // Moduli delegati
         this.pathfinder = new Pathfinding(levelMap, cellSize, offsetX, offsetZ);
         const model = createGhostMesh();
         
@@ -22,11 +21,11 @@ export class Ghost {
         this.mesh.position.set(startX, 1.0, startZ);
         scene.add(this.mesh);
 
-        // --- VARIABILI DI STATO E NAVIGAZIONE ---
         this.state = 'PATROL'; 
-        this.baseSpeed = 1.5;
-        this.huntSpeed = 2.5; 
+        this.baseSpeed = CURRENT_SETTINGS.ghostBaseSpeed;
+        this.huntSpeed = CURRENT_SETTINGS.ghostHuntSpeed; 
         this.speed = this.baseSpeed;
+        
         this.lightColor = new THREE.Color(0x00ffff);
         this.direction = new THREE.Vector3(0, 0, 1);
         this.lastDecisionGrid = { x: -1, z: -1 };
@@ -41,7 +40,6 @@ export class Ghost {
     }
 
     initAudio(audioManager) {
-        // Usiamo l'AudioManager centrale per istanziare e pre-caricare i suoni posizionali 3D
         this.audioNormal = audioManager.createPositionalSound('./assets/normal.mp3', 3, true, () => {
             if (this.gameStarted && this.state !== 'HUNT' && this.state !== 'STUNNED') {
                 this.audioNormal.play();
@@ -70,7 +68,6 @@ export class Ghost {
     }
 
     takeDamage() {
-        // Se non è già stordito, cambia lo stato
         if (this.state !== 'STUNNED') {
             STATS.ghostsDefeated++;
             this.changeState('STUNNED');
@@ -80,14 +77,12 @@ export class Ghost {
     changeState(newState) {
         if (this.state === newState) return; 
         
-        // Se passiamo a HUNT da un altro stato, significa che ci ha scoperti
         if (newState === 'HUNT' && this.state !== 'HUNT') {
             STATS.timesDiscovered++;
         }
 
         this.state = newState;
 
-        // Reset visivo base per tutti gli stati normali
         this.ghostMat.color.setHex(0xffffff);
         this.ghostMat.opacity = 1.0;
 
@@ -98,7 +93,6 @@ export class Ghost {
             this.ghostMat.opacity = 0.5;
             this.speed = this.huntSpeed;
             
-            // Disattiva tutti i suoni che provengono dal fantasma quando è stordito
             if (this.audioNormal.isPlaying) this.audioNormal.pause();
             if (this.audioFast.isPlaying) this.audioFast.pause();
             if (this.audioAlert.isPlaying) this.audioAlert.pause();
@@ -116,7 +110,7 @@ export class Ghost {
             this.speed = this.baseSpeed;
             if (this.audioFast.isPlaying) this.audioFast.pause();
             if (this.audioNormal.buffer && !this.audioNormal.isPlaying) this.audioNormal.play();
-        } else { // PATROL
+        } else { 
             this.faceMat.map = this.textures.normal;
             this.lightColor.setHex(0xaaffff); 
             this.speed = this.baseSpeed;
@@ -126,7 +120,6 @@ export class Ghost {
     }
 
     hearNoise(worldX, worldZ, noiseRadius) {
-        // Ignora i rumori se sta cacciando o se è già stordito e sta scappando
         if (this.state === 'HUNT' || this.state === 'STUNNED') return; 
         
         const dist = Math.hypot(this.mesh.position.x - worldX, this.mesh.position.z - worldZ);
@@ -149,7 +142,6 @@ export class Ghost {
         const gridPos = this.pathfinder.getGridPos(currentX, currentZ);
         const playerGridPos = this.pathfinder.getGridPos(playerPos.x, playerPos.z);
         
-        // --- 1. CONTROLLO VISIONE (Line of Sight) ---
         if (this.state !== 'STUNNED') {
             const distToPlayer = this.mesh.position.distanceTo(playerPos);
             if (distToPlayer < 20.0) {
@@ -166,7 +158,6 @@ export class Ghost {
             }
         }
 
-        // --- 2. MOVIMENTO E DECISIONI (A*) ---
         const cellCenterX = (gridPos.x + this.offsetX) * this.cellSize;
         const cellCenterZ = (gridPos.z + this.offsetZ) * this.cellSize;
         const distToCenter = Math.hypot(currentX - cellCenterX, currentZ - cellCenterZ);
@@ -226,14 +217,12 @@ export class Ghost {
             }
         }
 
-        // --- 3. APPLICAZIONE FISICA E ROTAZIONE ---
         this.mesh.position.add(this.direction.clone().multiplyScalar(this.speed * delta));
         const targetLookPos = this.mesh.position.clone().add(this.direction);
         const dummyMatrix = new THREE.Matrix4().lookAt(this.mesh.position, targetLookPos, new THREE.Vector3(0, 1, 0));
         this.targetQuaternion.setFromRotationMatrix(dummyMatrix);
         this.mesh.quaternion.slerp(this.targetQuaternion, 10 * delta);
         
-        // --- 4. ANIMAZIONE DI FLUTTUAZIONE (Bobbing effect) ---
         const time = Date.now() * 0.004; 
         this.mesh.position.y = 1.0 + Math.sin(time) * 0.1;
     }

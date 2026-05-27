@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+import { CURRENT_SETTINGS } from './config.js';
 
 export class InputManager {
     constructor(camera, renderer, playerRig, onSessionStart, onSessionEnd) {
@@ -7,15 +8,12 @@ export class InputManager {
         this.renderer = renderer;
         this.playerRig = playerRig;
         
-        // Controlli e stati Flat PC
         this.controls = new PointerLockControls(camera, document.body);
         this.moveState = { forward: false, backward: false, left: false, right: false };
         
-        // Stati universali dei pulsanti/grilletti
         this.isTriggerDown = false;
         this.triggerPressedThisFrame = false;
         
-        // Riferimenti VR
         this.rightController = null;
         this.leftController = null;
         this.controllers = [];
@@ -25,11 +23,12 @@ export class InputManager {
     }
 
     initFlatControls() {
-        const instructions = document.getElementById('instructions');
-        
         document.body.addEventListener('click', () => { 
             if (!this.renderer.xr.isPresenting && !this.controls.isLocked) {
-                this.controls.lock();
+                const isMenuVisible = document.getElementById('ui-layer').style.display !== 'none';
+                if (!isMenuVisible) {
+                    this.controls.lock();
+                }
             } 
         });
 
@@ -46,9 +45,6 @@ export class InputManager {
             }
         });
         
-        this.controls.addEventListener('lock', () => instructions.style.display = 'none');
-        this.controls.addEventListener('unlock', () => instructions.style.display = '');
-
         const handleKey = (code, isDown) => {
             if (code === 'KeyW') this.moveState.forward = isDown;
             if (code === 'KeyA') this.moveState.left = isDown;
@@ -99,7 +95,6 @@ export class InputManager {
         this.renderer.xr.addEventListener('sessionend', () => { if (onSessionEnd) onSessionEnd(); });
     }
 
-    // Metodo universale per ottenere l'asse di movimento, indipendente dalla periferica
     getMovementAxes(delta) {
         let inputX = 0;
         let inputZ = 0;
@@ -112,19 +107,16 @@ export class InputManager {
             if (session && session.inputSources) {
                 for (const source of session.inputSources) {
                     if (source.gamepad && source.gamepad.axes.length >= 4) {
-                        // STICK SINISTRO (Movimento)
                         if (source.handedness === 'left') {
                             const xAxis = source.gamepad.axes[2];
                             const zAxis = source.gamepad.axes[3];
                             if (Math.abs(xAxis) > 0.1) inputX = xAxis;
                             if (Math.abs(zAxis) > 0.1) inputZ = -zAxis; 
                         } 
-                        // STICK DESTRO (Rotazione visuale e uscita)
                         else if (source.handedness === 'right') {
                             const turnAxis = source.gamepad.axes[2]; 
                             if (Math.abs(turnAxis) > 0.1) {
-                                const TURN_SPEED = 2.0; 
-                                this.playerRig.rotation.y -= turnAxis * TURN_SPEED * delta;
+                                this.playerRig.rotation.y -= turnAxis * CURRENT_SETTINGS.turnSpeed * delta;
                             }
                             if (source.gamepad.buttons.length >= 6 && source.gamepad.buttons[5].pressed) {
                                 session.end();
