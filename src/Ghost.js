@@ -176,16 +176,15 @@ export class Ghost {
             let decided = false;
 
             if (this.state === 'STUNNED') {
-                // Calcola dinamicamente il centro della mappa per la rigenerazione
                 const centerX = Math.floor(this.levelMap[0].length / 2);
                 const centerZ = Math.floor(this.levelMap.length / 2);
 
                 if (gridPos.x === centerX && gridPos.z === centerZ) {
-                    // Arrivato al centro! Torna in pattugliamento attivo
                     this.changeState('PATROL');
                 } else {
                     const path = this.pathfinder.findPath(gridPos.x, gridPos.z, centerX, centerZ);
                     if (path && path.length > 0) {
+                        this.mesh.position.set(cellCenterX, this.mesh.position.y, cellCenterZ);
                         this.direction = path[0]; 
                         decided = true;
                     }
@@ -193,6 +192,7 @@ export class Ghost {
             } else if (this.state === 'HUNT' && this.lastSeenPlayerGrid) {
                 const path = this.pathfinder.findPath(gridPos.x, gridPos.z, this.lastSeenPlayerGrid.x, this.lastSeenPlayerGrid.z);
                 if (path && path.length > 0) {
+                    this.mesh.position.set(cellCenterX, this.mesh.position.y, cellCenterZ);
                     this.direction = path[0]; 
                     decided = true;
                 } else {
@@ -202,6 +202,7 @@ export class Ghost {
             } else if (this.state === 'INVESTIGATE' && this.investigateTargetGrid) {
                 const path = this.pathfinder.findPath(gridPos.x, gridPos.z, this.investigateTargetGrid.x, this.investigateTargetGrid.z);
                 if (path && path.length > 0) {
+                    this.mesh.position.set(cellCenterX, this.mesh.position.y, cellCenterZ);
                     this.direction = path[0];
                     decided = true;
                 } else {
