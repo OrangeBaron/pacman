@@ -198,11 +198,26 @@ function animate() {
         // --- AGGIORNAMENTO SHADERS DEGLI AMBIENTI ---
         environment.shaderUniforms.u_playerPosition.value.copy(playerWorldPos);
 
-        for (let i = 0; i < 4; i++) {
-            if (i < weaponManager.pickups.length) {
-                environment.shaderUniforms.u_weaponPositions.value[i].copy(weaponManager.pickups[i].position);
+        // --- GESTIONE DINAMICA LUCI ARMI (Le 2 più vicine) ---
+        const weaponsWithDistance = weaponManager.pickups.map(pickup => {
+            return {
+                pickup: pickup,
+                sqDistance: pickup.position.distanceToSquared(playerWorldPos)
+            };
+        });
+
+        // Ordiniamo le armi dalla più vicina alla più lontana
+        weaponsWithDistance.sort((a, b) => a.sqDistance - b.sqDistance);
+
+        // Estraiamo solo le prime 2
+        const closestWeapons = weaponsWithDistance.slice(0, 2).map(item => item.pickup);
+
+        // Passiamo allo shader le posizioni (massimo 2)
+        for (let i = 0; i < 2; i++) {
+            if (i < closestWeapons.length) {
+                environment.shaderUniforms.u_weaponPositions.value[i].copy(closestWeapons[i].position);
             } else {
-                environment.shaderUniforms.u_weaponPositions.value[i].set(0, -100, 0); 
+                environment.shaderUniforms.u_weaponPositions.value[i].set(0, -100, 0); // Nascondi
             }
         }
 

@@ -17,7 +17,7 @@ export const fragmentShader = `
     uniform vec3 u_ghostPositions[4];
     uniform vec3 u_ghostDirections[4];
     uniform vec3 u_ghostColors[4];
-    uniform vec3 u_weaponPositions[4];
+    uniform vec3 u_weaponPositions[2];
     uniform vec3 u_playerPosition;
     
     uniform sampler2D u_mapTexture;
@@ -151,7 +151,7 @@ export const fragmentShader = `
         vec3 weaponIllumination = vec3(0.0);
         vec3 weaponColor = vec3(0.2, 1.0, 0.2);
         
-        for(int i = 0; i < 4; i++) {
+        for(int i = 0; i < 2; i++) {
             vec3 weaponPos = u_weaponPositions[i];
             vec3 toPixel = vWorldPosition - weaponPos;
             float dist = length(toPixel);
