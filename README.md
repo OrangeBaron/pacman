@@ -40,24 +40,25 @@ I fantasmi non si muovono casualmente, ma sono guidati dall'algoritmo di **Pathf
 3. **🔴 Caccia (Luce Rossa):** Quando vieni individuato nel loro cono visivo, il loro volto si fa aggressivo e inizieranno a inseguirti aumentando la velocità, cambiando dinamicamente il tema musicale della partita.
 4. **🌀 Stordimento (Colore Blu / Volto Frastornato):** Se spari a un fantasma, questo diventerà inoffensivo e scapperà velocemente verso il centro del labirinto per rigenerarsi, per poi tornare in pattugliamento.
 
-### 🔫 Armi e Combattimento
+### 🔫 Armi, Illuminazione e Combattimento
 
-Per difenderti, avrai a disposizione un arsenale:
+Per sopravvivere nel buio pesto, avrai a disposizione il tuo arsenale:
 
+- **Torcia Tattica:** Il labirinto è avvolto nell'oscurità. L'unico modo per orientarti è il fascio di luce dinamico montato sulla tua arma. In VR, la torcia segue il movimento reale del tuo controller, permettendoti di scrutare dietro gli angoli prima di esporti.
 - **Pistola Base:** Hai munizioni infinite, ma un rateo di fuoco lento. Spara solo se strettamente necessario, poiché il baccano può svelare la tua posizione a tutta la mappa.
-- **Armi Speciali (Fucile d'Assalto):** Generati proceduralmente all'interno dei vicoli ciechi della mappa. Offrono fuoco automatico, ottimo per sfuggire ad agguati multipli, ma hanno solo un caricatore da 30 colpi. Una volta esauriti, tornerai alla pistola.
+- **Armi Speciali (Fucile d'Assalto):** Generati proceduralmente all'interno dei vicoli ciechi della mappa (ed evidenziati da una debole luce verde). Offrono fuoco automatico, ottimo per sfuggire ad agguati multipli, ma hanno solo un caricatore da 30 colpi. Una volta esauriti, tornerai alla pistola.
 
 ### 📊 End-Game e Tabellone
 
 Al termine della partita, l'interfaccia HTML mostrerà un riepilogo dettagliato delle tue statistiche (monete raccolte, volte in cui sei stato scoperto, precisione di tiro, ecc.).
-*Nota VR: In caso di fine partita con il visore, la sessione VR verrà terminata automaticamente per permettere all'utente di consultare il menu sul monitor e riavviare istantaneamente una nuova mappa senza dover ricaricare la pagina web.*
+*Nota VR: In caso di fine partita con il visore, la sessione VR verrà terminata automaticamente per permettere all'utente di consultare il menu in modalità flat e riavviare istantaneamente una nuova mappa senza dover ricaricare la pagina web.*
 
 ---
 
 ## 🛠️ Stack Tecnologico e Dettagli
 
 - **Grafica Low-Poly Cel-Shaded:** Stile pulito, senza luci dinamiche native per garantire performance ottimali (90+ fps stabili in VR).
-- **Custom Shaders & Dynamic LOD:** L'illuminazione ambientale, le torce delle armi e la luce emessa dai fantasmi sono calcolate tramite uno **ShaderMaterial** personalizzato. Il gioco elabora la distanza delle entità per passare allo shader in tempo reale solo le luci dei 4 fantasmi più vicini al giocatore, garantendo scalabilità anche in mappe popolate da decine di nemici.
+- **Custom Shaders, Ombre e LOD:** L'illuminazione ambientale è ridotta al minimo. Il cono di luce della torcia direzionale del giocatore, le luci delle armi a terra e la luce emessa dai fantasmi sono calcolate matematicamente tramite uno **ShaderMaterial** personalizzato. Lo shader utilizza una logica di raymarching (tramite la funzione `isOccluded`) per calcolare le collisioni della luce con i muri del labirinto e proiettare ombre corrette. Inoltre, per scalare le performance, la CPU elabora la distanza delle entità passando alla GPU solo le fonti di luce fisicamente più vicine al giocatore.
 - **Mappe Procedurali:** I labirinti vengono generati casualmente ad ogni avvio tramite l'algoritmo *Recursive Backtracking*, modificato appositamente per rimuovere i vicoli ciechi e introdurre dei "loop" ciclici in pieno stile Pac-Man.
 
 ---

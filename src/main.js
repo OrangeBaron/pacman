@@ -198,6 +198,25 @@ function animate() {
         // --- AGGIORNAMENTO SHADERS DEGLI AMBIENTI ---
         environment.shaderUniforms.u_playerPosition.value.copy(playerWorldPos);
 
+        // GESTIONE DELLA TORCIA (FLASHLIGHT)
+        if (weapon && weapon.mesh) {
+            const flashlightPos = new THREE.Vector3();
+            const flashlightDir = new THREE.Vector3(0, 0, -1);
+
+            // Otteniamo la posizione globale dell'arma
+            weapon.mesh.getWorldPosition(flashlightPos);
+            // La luce parte leggermente più avanti rispetto all'arma per evitare auto-ombreggiature
+            
+            // Otteniamo il vettore frontale dell'arma rispetto al mondo (spazio globale)
+            flashlightDir.transformDirection(weapon.mesh.matrixWorld).normalize();
+            
+            // Spostiamo la posizione della luce leggermente in avanti nella direzione della canna
+            flashlightPos.addScaledVector(flashlightDir, 0.3);
+
+            environment.shaderUniforms.u_flashlightPos.value.copy(flashlightPos);
+            environment.shaderUniforms.u_flashlightDir.value.copy(flashlightDir);
+        }
+
         // --- GESTIONE DINAMICA LUCI ARMI (Le 2 più vicine) ---
         const weaponsWithDistance = weaponManager.pickups.map(pickup => {
             return {

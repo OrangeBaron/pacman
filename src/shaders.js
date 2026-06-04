@@ -19,7 +19,8 @@ export const fragmentShader = `
     uniform vec3 u_ghostColors[4];
     uniform vec3 u_weaponPositions[2];
     uniform vec3 u_playerPosition;
-    
+    uniform vec3 u_flashlightPos;
+    uniform vec3 u_flashlightDir;
     uniform sampler2D u_mapTexture;
     uniform float u_mapSize;
     uniform float u_cellSize;
@@ -68,7 +69,6 @@ export const fragmentShader = `
 
         if (isFloorOrCeiling > 0.0) {
             // --- PATTERN PAVIMENTO E SOFFITTO ---
-            // Grosse lastre quadrate
             vec2 pos2D = vWorldPosition.xz * 0.6;
             vec2 localPos = fract(pos2D);
             vec2 blockId = floor(pos2D);
@@ -77,7 +77,6 @@ export const fragmentShader = `
             float isMortarY = step(localPos.y, 0.04);
             float mortar = clamp(isMortarX + isMortarY, 0.0, 1.0);
 
-            // Colore della singola lastra
             float noiseVal = random(vec3(blockId, 0.0));
             vec3 stoneColor = mix(u_baseColor * 0.8, u_baseColor * 1.2, noiseVal) + rockGrain;
             vec3 mortarColor = u_baseColor * 0.15;
@@ -86,19 +85,16 @@ export const fragmentShader = `
 
         } else {
             // --- PATTERN PARETI ---
-            // Mattoni rettangolari sfalsati
             vec2 pos2D;
             
-            // Usiamo gli assi giusti a seconda che il muro guardi su X o su Z
             if (abs(vNormal.x) > 0.5) {
                 pos2D = vWorldPosition.zy; 
             } else {
                 pos2D = vWorldPosition.xy;
             }
             
-            pos2D *= vec2(1.2, 2.0); // Scaliamo per renderli rettangolari
+            pos2D *= vec2(1.2, 2.0); 
 
-            // Sfalsiamo le righe
             float stagger = step(0.5, fract(pos2D.y));
             pos2D.x += stagger * 0.5;
 
@@ -109,21 +105,43 @@ export const fragmentShader = `
             float isMortarY = step(localPos.y, 0.05);
             float mortar = clamp(isMortarX + isMortarY, 0.0, 1.0);
 
-            // Colore del singolo mattone
-            float noiseVal = random(vec3(blockId, 1.0)); // Seed diverso dal pavimento
+            float noiseVal = random(vec3(blockId, 1.0)); 
             vec3 stoneColor = mix(u_baseColor * 0.6, u_baseColor * 1.4, noiseVal) + rockGrain;
             vec3 mortarColor = u_baseColor * 0.1;
 
             albedo = mix(stoneColor, mortarColor, mortar);
         }
 
-        // --- CALCOLO LUCI ---
-        float distToPlayer = length(vWorldPosition - u_playerPosition);
-        float playerAura = smoothstep(10.0, 0.0, distToPlayer) * 1.2; 
-        vec3 baseLight = vec3(0.02) + vec3(playerAura);
-        
+        // --- CALCOLO LUCI DI BASE ---
+        vec3 baseLight = vec3(0.12, 0.16, 0.32);
         vec3 baseIllumination = albedo * baseLight;
 
+        // --- CALCOLO LUCE TORCIA SULL'ARMA ---
+        vec3 flashlightIllumination = vec3(0.0);
+        vec3 toPixelFL = vWorldPosition - u_flashlightPos;
+        float distFL = length(toPixelFL);
+        
+        // Raggio massimo della torcia (più profondo dell'aura originale)
+        if (distFL < 35.0) {
+            vec3 toPixelNormFL = normalize(toPixelFL);
+            float angleFL = dot(toPixelNormFL, u_flashlightDir);
+            
+            // Angolo del cono di luce (es. 0.85 per il centro, 0.75 per il bordo sfumato)
+            float innerCone = 0.85;
+            float outerCone = 0.75;
+            
+            if (angleFL > outerCone) {
+                // Calcoliamo le ombre sui muri (isOccluded) per la torcia
+                if (!isOccluded(vWorldPosition, u_flashlightPos)) {
+                    float intensityFL = smoothstep(35.0, 0.0, distFL);
+                    float angularIntensityFL = smoothstep(outerCone, innerCone, angleFL);
+                    // Colore leggermente caldo/giallognolo tipico di una torcia
+                    flashlightIllumination = vec3(1.0, 0.95, 0.8) * intensityFL * angularIntensityFL * 2.5;
+                }
+            }
+        }
+
+        // --- CALCOLO LUCE FANTASMI ---
         vec3 ghostIllumination = vec3(0.0);
         for(int i = 0; i < 4; i++) {
             vec3 ghostPos = u_ghostPositions[i];
@@ -156,9 +174,7 @@ export const fragmentShader = `
             vec3 toPixel = vWorldPosition - weaponPos;
             float dist = length(toPixel);
             
-            // Raggio d'azione della luce dell'arma
             if (dist < 6.0) {
-                // Calcoliamo le ombre come per i fantasmi
                 if (!isOccluded(vWorldPosition, weaponPos)) {
                     float intensity = smoothstep(6.0, 0.0, dist);
                     weaponIllumination += weaponColor * (intensity * 1.0); 
@@ -166,8 +182,11 @@ export const fragmentShader = `
             }
         }
 
-        // Sommiamo la luce delle armi al colore finale
-        vec3 finalColor = baseIllumination + (albedo * ghostIllumination * 5.0) + (albedo * weaponIllumination);
+        // Sommiamo la luce ambientale, la torcia, i fantasmi e le armi a terra
+        vec3 finalColor = baseIllumination 
+                        + (albedo * flashlightIllumination)
+                        + (albedo * ghostIllumination * 5.0) 
+                        + (albedo * weaponIllumination);
 
         gl_FragColor = vec4(clamp(finalColor, 0.0, 1.0), 1.0);
     }

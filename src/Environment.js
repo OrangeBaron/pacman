@@ -19,6 +19,8 @@ export class Environment {
             u_ghostColors: { value: Array(4).fill(null).map(() => new THREE.Color(0x00ffff)) },
             u_weaponPositions: { value: Array(2).fill(null).map(() => new THREE.Vector3(0, -100, 0)) },
             u_playerPosition: { value: new THREE.Vector3(0, 0, 0) },
+            u_flashlightPos: { value: new THREE.Vector3(0, 0, 0) },
+            u_flashlightDir: { value: new THREE.Vector3(0, 0, -1) },
             u_mapTexture: { value: null }, 
             u_mapSize: { value: CURRENT_SETTINGS.mapSize },
             u_cellSize: { value: CONFIG.CELL_SIZE },
