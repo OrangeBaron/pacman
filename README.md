@@ -6,7 +6,7 @@
 
 Il gioco è completamente fruibile sia con i **visori VR** che in modalità **"Flat" tradizionale** su PC (tramite WASD e mouse).
 
-🚀 **[Clicca qui per giocare a Pacman VR FPS!](https://orangebaron.github.io/pacman/)**
+**[Clicca qui per giocare a Pacman VR FPS!](https://orangebaron.github.io/pacman/)**
 
 ---
 
