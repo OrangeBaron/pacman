@@ -69,11 +69,14 @@ Al termine della partita, l'interfaccia HTML mostrerà un riepilogo dettagliato 
 
 Tra le caratteristiche considerate o programmate per i prossimi aggiornamenti troviamo:
 
-- [ ] **UI/UX:** Integrazione di interfacce diegetiche, come una mini-mappa o indicatori delle munizioni integrati su un display ancorato al polso del giocatore (smartwatch/device 3D) o HUD a schermo fluttuante.
-- [ ] **Grafica:** Sostituzione delle monete con vari tipi di caramelle.
+- [ ] **UI Diegetiche:** Mini-mappa e indicatori delle munizioni integrati sul polso o HUD.
+- [ ] **Oggetti di Gioco:** Sostituzione delle monete con vari tipi di caramelle.
+- [ ] **Animazioni:** Respiro del fucile (Weapon Sway & Bobbing) e pulsazione delle monete.
+- [ ] **Shader/Luci e Ombre:** Flash dello sparo, scintille all'impatto dei protiettili.
+- [ ] **Effetti Visivi:** Effetto "Paura" diegetico, con vignettatura o effetto "disturbo VHS".
 - [ ] **Audio:** Sostituzione delle musiche e degli effetti sonori.
-- [ ] **Gamplay:** Introduzione di nuove tipologie di nemici o power-up.
-- [ ] **Mobile/Tablet:** Integrazione comandi a schermo per dispositivi touch.
+- [ ] **Gameplay:** Introduzione di nuove tipologie di nemici o power-up.
+- [ ] **Mobile/Tablet:** Integrazione dei comandi a schermo per dispositivi touch.
 
 ---
 
