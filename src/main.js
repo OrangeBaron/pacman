@@ -60,10 +60,6 @@ function applySettingsAndStart() {
     CURRENT_SETTINGS.mapSize = parseInt(document.getElementById('set-mapSize').value);
     CURRENT_SETTINGS.ghostCount = parseInt(document.getElementById('set-ghostCount').value);
     CURRENT_SETTINGS.weaponCount = parseInt(document.getElementById('set-weaponCount').value);
-    CURRENT_SETTINGS.ghostBaseSpeed = parseFloat(document.getElementById('set-ghostBaseSpeed').value);
-    CURRENT_SETTINGS.ghostHuntSpeed = parseFloat(document.getElementById('set-ghostHuntSpeed').value);
-    CURRENT_SETTINGS.playerSpeed = parseFloat(document.getElementById('set-playerSpeed').value);
-    CURRENT_SETTINGS.turnSpeed = parseFloat(document.getElementById('set-turnSpeed').value);
     CURRENT_SETTINGS.leftHanded = document.getElementById('set-leftHanded').checked;
 
     // Assicuriamoci che la mappa sia sempre dispari

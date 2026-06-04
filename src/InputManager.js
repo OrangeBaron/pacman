@@ -110,19 +110,20 @@ export class InputManager {
             inputX = Number(this.moveState.right) - Number(this.moveState.left);
         } else if (this.renderer.xr.isPresenting) {
             const session = this.renderer.xr.getSession();
-            const moveHand = CURRENT_SETTINGS.leftHanded ? 'right' : 'left';
-            const turnHand = CURRENT_SETTINGS.leftHanded ? 'left' : 'right';
-
+            
             if (session && session.inputSources) {
                 for (const source of session.inputSources) {
                     if (source.gamepad && source.gamepad.axes.length >= 4) {
-                        if (source.handedness === moveHand) {
+                        
+                        // Il movimento resta FISSO sulla mano sinistra
+                        if (source.handedness === 'left') {
                             const xAxis = source.gamepad.axes[2];
                             const zAxis = source.gamepad.axes[3];
                             if (Math.abs(xAxis) > 0.1) inputX = xAxis;
                             if (Math.abs(zAxis) > 0.1) inputZ = -zAxis; 
                         } 
-                        else if (source.handedness === turnHand) {
+                        // La rotazione (e il tasto di uscita) resta FISSA sulla mano destra
+                        else if (source.handedness === 'right') {
                             const turnAxis = source.gamepad.axes[2]; 
                             if (Math.abs(turnAxis) > 0.1) {
                                 this.playerRig.rotation.y -= turnAxis * CURRENT_SETTINGS.turnSpeed * delta;
@@ -131,10 +132,12 @@ export class InputManager {
                                 session.end();
                             }
                         }
+                        
                     }
                 }
             }
         }
+
         return { inputX, inputZ };
     }
 
