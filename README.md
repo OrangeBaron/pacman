@@ -28,6 +28,7 @@ Prima di ogni avvio, un Menu Principale permette di generare partite uniche rego
 Il suono e l'infiltrazione sono i fulcri dell'esperienza:
 
 - **Audio 3D Spaziale:** Ogni entità ed evento produce un suono posizionato nello spazio 3D, aiutandoti a capire da che direzione provengono le minacce.
+- **Occlusione dei Suoni:** Se un fantasma si trova dietro a un muro, il suo audio diventa cupo e ovattato, per poi tornare limpido non appena entra nella tua linea di vista.
 - **Rumori Bassi:** Raccogliere le monete emette un leggero suono. I fantasmi nelle vicinanze potrebbero avvertire il rumore e insospettirsi.
 - **Rumori Alti:** Utilizzare armi da fuoco o raccogliere armi speciali genera un forte baccano, allertando le IA presenti su un raggio molto più ampio.
 
@@ -58,7 +59,8 @@ Al termine della partita, l'interfaccia HTML mostrerà un riepilogo dettagliato 
 ## 🛠️ Stack Tecnologico e Dettagli
 
 - **Grafica Low-Poly Cel-Shaded:** Stile pulito, senza luci dinamiche native per garantire performance ottimali (90+ fps stabili in VR).
-- **Custom Shaders, Ombre e LOD:** L'illuminazione ambientale è ridotta al minimo. Il cono di luce della torcia direzionale del giocatore, le luci delle armi a terra e la luce emessa dai fantasmi sono calcolate matematicamente tramite uno **ShaderMaterial** personalizzato. Lo shader utilizza una logica di raymarching (tramite la funzione `isOccluded`) per calcolare le collisioni della luce con i muri del labirinto e proiettare ombre corrette. Inoltre, per scalare le performance, la CPU elabora la distanza delle entità passando alla GPU solo le fonti di luce fisicamente più vicine al giocatore.
+- **Custom Shaders e Ombre:** Torcia, luci ambientali e illuminazione dei fantasmi sono gestite da uno shader personalizzato che calcola matematicamente le collisioni della luce con i muri per proiettare ombre corrette in modo efficiente.
+- **Occlusione Audio (Web Audio API):** Sfrutta il controllo della linea di vista sulla griglia 2D per applicare un filtro passa-basso ai fantasmi coperti dalle pareti, interpolando la frequenza di taglio in tempo reale.
 - **Mappe Procedurali:** I labirinti vengono generati casualmente ad ogni avvio tramite l'algoritmo *Recursive Backtracking*, modificato appositamente per rimuovere i vicoli ciechi e introdurre dei "loop" ciclici in pieno stile Pac-Man.
 
 ---
