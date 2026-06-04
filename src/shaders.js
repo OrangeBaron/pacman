@@ -64,7 +64,7 @@ export const fragmentShader = `
         
         float isFloorOrCeiling = step(0.5, abs(vNormal.y));
 
-        float rockGrain = (random(vWorldPosition * 15.0) - 0.5) * 0.15;
+        float rockGrain = (random(floor(vWorldPosition * 50.0)) - 0.5) * 0.15;
 
         if (isFloorOrCeiling > 0.0) {
             // --- PATTERN PAVIMENTO E SOFFITTO ---
