@@ -96,3 +96,9 @@ Tra le caratteristiche considerate o programmate per i prossimi aggiornamenti tr
 - **Levetta Analogica Destra**: Rotazione della visuale.
 - **Grilletto Destro**: Spara.
 - **Tasto B**: Esci dalla VR.
+
+---
+
+## ⚠️ Disclaimer
+
+*Pacman VR FPS* è un progetto amatoriale realizzato a solo scopo di studio e dimostrazione tecnica (WebXR/Three.js). Non è in alcun modo sponsorizzato, approvato o affiliato con Bandai Namco. Tutti i diritti sul marchio e sul concept originale di "Pac-Man" appartengono ai legittimi proprietari. Questo progetto è senza fini di lucro.
