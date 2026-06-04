@@ -40,13 +40,26 @@ export class Ghost {
     }
 
     initAudio(audioManager) {
+        const audioCtx = audioManager.listener.context;
+
+        this.filterNormal = audioCtx.createBiquadFilter();
+        this.filterNormal.type = 'lowpass';
+        this.filterNormal.frequency.value = 22050;
+
+        this.filterFast = audioCtx.createBiquadFilter();
+        this.filterFast.type = 'lowpass';
+        this.filterFast.frequency.value = 22050;
+
         this.audioNormal = audioManager.createPositionalSound('./assets/normal.mp3', 3, true, () => {
             if (this.gameStarted && this.state !== 'HUNT' && this.state !== 'STUNNED') {
                 this.audioNormal.play();
             }
         });
+        this.audioNormal.setFilter(this.filterNormal);
 
         this.audioFast = audioManager.createPositionalSound('./assets/fast.mp3', 5, true);
+        this.audioFast.setFilter(this.filterFast);
+        
         this.audioAlert = audioManager.createPositionalSound('./assets/alert.mp3', 5, false);
 
         this.mesh.add(this.audioNormal);
@@ -141,6 +154,13 @@ export class Ghost {
         const currentZ = this.mesh.position.z;
         const gridPos = this.pathfinder.getGridPos(currentX, currentZ);
         const playerGridPos = this.pathfinder.getGridPos(playerPos.x, playerPos.z);
+        
+        const hasLineOfSight = this.pathfinder.checkLineOfSight(gridPos.x, gridPos.z, playerGridPos.x, playerGridPos.z);
+        
+        const targetFreq = hasLineOfSight ? 22050 : 600;
+        
+        this.filterNormal.frequency.value += (targetFreq - this.filterNormal.frequency.value) * 10 * delta;
+        this.filterFast.frequency.value += (targetFreq - this.filterFast.frequency.value) * 10 * delta;
         
         if (this.state !== 'STUNNED') {
             const distToPlayer = this.mesh.position.distanceTo(playerPos);
