@@ -10,11 +10,12 @@ import { Weapon } from './Weapon.js';
 import { WeaponManager } from './WeaponManager.js';
 import { AudioManager } from './AudioManager.js';
 import { GameManager } from './GameManager.js';
+import { DustManager } from './DustManager.js';
 
 // --- VARIABILI GLOBALI E STATO DEL GIOCO ---
 let scene, camera, renderer, playerRig, audioManager, clock;
 let levelMap, environment, player, weapon, ghosts = [];
-let coinManager, weaponManager, gameManager;
+let coinManager, weaponManager, gameManager, dustManager;
 
 // --- RIFERIMENTI UI (HTML) ---
 const uiLayer = document.getElementById('ui-layer');
@@ -129,6 +130,10 @@ function buildGameScene() {
     levelMap = generateMaze(CURRENT_SETTINGS.mapSize, CURRENT_SETTINGS.mapSize);
     environment = new Environment(scene, levelMap);
 
+    // -- PARTICELLARE --
+    if (dustManager) dustManager.dispose();
+    dustManager = new DustManager(scene, CURRENT_SETTINGS.mapSize);
+
     // --- INIZIALIZZAZIONE PLAYER E ARMI ---
     player = new Player(camera, playerRig, renderer, levelMap, scene);
     weapon = new Weapon(camera, audioManager); 
@@ -215,6 +220,14 @@ function animate() {
 
             environment.shaderUniforms.u_flashlightPos.value.copy(flashlightPos);
             environment.shaderUniforms.u_flashlightDir.value.copy(flashlightDir);
+
+            if (dustManager) {
+                dustManager.update(
+                    clock.getElapsedTime(), 
+                    flashlightPos, 
+                    flashlightDir
+                );
+            }
         }
 
         // --- GESTIONE DINAMICA LUCI ARMI (Le 2 più vicine) ---

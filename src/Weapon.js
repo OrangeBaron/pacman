@@ -51,11 +51,11 @@ export class Weapon {
     }
 
     shoot(ghosts, scene, vrController = null) {
-        if (!this.canShoot) return;
+        if (!this.canShoot) return false;
 
         if (this.currentAmmo <= 0 && this.currentType !== 'pistol') {
             this.equip('pistol');
-            return;
+            return false;
         }
 
         // 1. Riproduci audio e applica cooldown tramite il nuovo AudioManager
@@ -98,6 +98,10 @@ export class Weapon {
         for (let i = 0; i < intersects.length; i++) {
             const hitMesh = intersects[i].object;
             
+            // 1. Ignora il pulviscolo (è un oggetto di tipo Points, non una Mesh)
+            if (hitMesh.isPoints) continue;
+
+            // 2. Ignora l'arma stessa che il giocatore ha in mano
             let isWeapon = false;
             let obj = hitMesh;
             while(obj) {
@@ -106,18 +110,29 @@ export class Weapon {
             }
             if (isWeapon) continue;
 
+            // 3. Controlla se abbiamo colpito un fantasma
             const hitGhost = ghosts.find(g => g.mesh === hitMesh || g.mesh.children.includes(hitMesh));
             
             if (hitGhost) {
+                // Se è un fantasma non ancora colpito da questo singolo sparo
                 if (!hitGhosts.has(hitGhost)) {
-                    console.log("Bersaglio colpito con:", this.currentType);
                     hitGhost.takeDamage();
                     hitGhosts.add(hitGhost);
                     STATS.shotsHit++;
+                    // IMPORTANTE: Non facciamo 'break' qui! In questo modo il ciclo
+                    // continua e il raggio "trapassa" il fantasma per colpire 
+                    // eventuali altri fantasmi dietro di lui.
                 }
-            } else if (hitMesh.material && hitMesh.material.type === 'ShaderMaterial') {
+            } 
+            // 4. Se non è un fantasma, controlla se è l'ambiente (muri, pavimento, soffitto)
+            // Sappiamo che l'ambiente è composto da Mesh con ShaderMaterial
+            else if (hitMesh.isMesh && hitMesh.material && hitMesh.material.type === 'ShaderMaterial') {
+                // Abbiamo colpito una parete solida. Il proiettile si ferma.
                 break;
             }
+            
+            // 5. Qualsiasi altra cosa (monete, armi a terra) viene ignorata 
+            // lasciando che il ciclo prosegua verso il prossimo oggetto intersecato.
         }
 
         // 4. PROPAGAZIONE DEL RUMORE
@@ -127,5 +142,7 @@ export class Weapon {
         ghosts.forEach(ghost => {
             ghost.hearNoise(worldPos.x, worldPos.z, 100.0);
         });
+
+        return true;
     }
 }

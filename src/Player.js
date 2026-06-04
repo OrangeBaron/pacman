@@ -67,10 +67,46 @@ export class Player {
             
             if (shouldShoot) {
                 const activeController = this.renderer.xr.isPresenting ? this.input.rightController : null;
-                this.weapon.shoot(ghosts, this.scene, activeController);
+                // Salviamo l'esito dello sparo
+                const didShoot = this.weapon.shoot(ghosts, this.scene, activeController);
+                
+                // --- FEEDBACK ATTICO: RINCULO ---
+                if (didShoot && this.renderer.xr.isPresenting) {
+                    // Il fucile vibra leggermente ma velocemente, la pistola dà un colpo secco e forte
+                    const intensity = this.weapon.currentType === 'rifle' ? 0.4 : 0.8;
+                    const duration = this.weapon.currentType === 'rifle' ? 50 : 100;
+                    this.input.triggerHaptic('right', intensity, duration);
+                }
             }
         }
 
+        // --- FEEDBACK ATTICO: BATTITO CARDIACO (PAURA) ---
+        if (this.renderer.xr.isPresenting) {
+            let minHuntDist = Infinity;
+            // Cerchiamo il fantasma in caccia più vicino a noi
+            for (let i = 0; i < ghosts.length; i++) {
+                if (ghosts[i].state === 'HUNT') {
+                    const dist = this.playerRig.position.distanceTo(ghosts[i].mesh.position);
+                    if (dist < minHuntDist) minHuntDist = dist;
+                }
+            }
+            
+            // Se un fantasma ci ha visto ed è a meno di 15 unità di distanza
+            if (minHuntDist < 15.0) {
+                const time = Date.now();
+                // Calcoliamo la frequenza del battito in base alla distanza (da lento a molto veloce)
+                const beatInterval = Math.max(250, minHuntDist * 60); 
+                
+                if (time - (this.lastBeatTime || 0) > beatInterval) {
+                    this.lastBeatTime = time;
+                    // Pulsazione dolce e cupa su entrambi i controller
+                    this.input.triggerHaptic('left', 0.3, 60);
+                    this.input.triggerHaptic('right', 0.3, 60);
+                }
+            }
+        }
+
+        // --- MOVIMENTO ---
         const { inputX, inputZ } = this.input.getMovementAxes(delta);
         const dirVector = new THREE.Vector2(inputX, inputZ).normalize();
         

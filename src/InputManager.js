@@ -133,4 +133,18 @@ export class InputManager {
     resetFrameData() {
         this.triggerPressedThisFrame = false;
     }
+
+    triggerHaptic(handedness, intensity, duration) {
+        if (!this.renderer.xr.isPresenting) return;
+        
+        const session = this.renderer.xr.getSession();
+        if (session && session.inputSources) {
+            for (const source of session.inputSources) {
+                // Cerchiamo il controller giusto (destro o sinistro) e verifichiamo che abbia un attuatore aptico
+                if (source.handedness === handedness && source.gamepad && source.gamepad.hapticActuators && source.gamepad.hapticActuators.length > 0) {
+                    source.gamepad.hapticActuators[0].pulse(intensity, duration);
+                }
+            }
+        }
+    }
 }
