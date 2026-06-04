@@ -64,6 +64,7 @@ function applySettingsAndStart() {
     CURRENT_SETTINGS.ghostHuntSpeed = parseFloat(document.getElementById('set-ghostHuntSpeed').value);
     CURRENT_SETTINGS.playerSpeed = parseFloat(document.getElementById('set-playerSpeed').value);
     CURRENT_SETTINGS.turnSpeed = parseFloat(document.getElementById('set-turnSpeed').value);
+    CURRENT_SETTINGS.leftHanded = document.getElementById('set-leftHanded').checked;
 
     // Assicuriamoci che la mappa sia sempre dispari
     if (CURRENT_SETTINGS.mapSize % 2 === 0) CURRENT_SETTINGS.mapSize += 1;

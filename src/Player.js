@@ -20,11 +20,13 @@ export class Player {
     }
 
     onVRSessionStart() {
-        if (this.weapon && this.input.rightController) {
+        // Determina il controller corretto
+        const fireController = CURRENT_SETTINGS.leftHanded ? this.input.leftController : this.input.rightController;
+        if (this.weapon && fireController) {
             if (this.weapon.mesh.parent) {
                 this.weapon.mesh.parent.remove(this.weapon.mesh);
             }
-            this.input.rightController.add(this.weapon.mesh);
+            fireController.add(this.weapon.mesh);
             this.weapon.mesh.position.set(0, 0, 0);
             this.weapon.mesh.rotation.set(0, 0, 0);
         }
@@ -36,7 +38,8 @@ export class Player {
                 this.weapon.mesh.parent.remove(this.weapon.mesh);
             }
             this.camera.add(this.weapon.mesh);
-            this.weapon.mesh.position.set(0.3, -0.3, -0.6);
+            const offsetX = CURRENT_SETTINGS.leftHanded ? -0.3 : 0.3;
+            this.weapon.mesh.position.set(offsetX, -0.3, -0.6);
             this.weapon.mesh.rotation.set(0, 0, 0);
         }
     }
@@ -62,20 +65,22 @@ export class Player {
     update(delta, ghosts) {
         if (this.weapon) {
             const wStats = this.weapon.stats[this.weapon.currentType];
-            
             const shouldShoot = (wStats.automatic && this.input.isTriggerDown) || this.input.triggerPressedThisFrame;
             
             if (shouldShoot) {
-                const activeController = this.renderer.xr.isPresenting ? this.input.rightController : null;
-                // Salviamo l'esito dello sparo
+                // Prendi il controller attivo (destro o sinistro)
+                const fireController = CURRENT_SETTINGS.leftHanded ? this.input.leftController : this.input.rightController;
+                const activeController = this.renderer.xr.isPresenting ? fireController : null;
+                
                 const didShoot = this.weapon.shoot(ghosts, this.scene, activeController);
                 
-                // --- FEEDBACK ATTICO: RINCULO ---
                 if (didShoot && this.renderer.xr.isPresenting) {
-                    // Il fucile vibra leggermente ma velocemente, la pistola dà un colpo secco e forte
                     const intensity = this.weapon.currentType === 'rifle' ? 0.4 : 0.8;
                     const duration = this.weapon.currentType === 'rifle' ? 50 : 100;
-                    this.input.triggerHaptic('right', intensity, duration);
+                    
+                    // Invia l'aptica alla mano corretta
+                    const fireHand = CURRENT_SETTINGS.leftHanded ? 'left' : 'right';
+                    this.input.triggerHaptic(fireHand, intensity, duration);
                 }
             }
         }

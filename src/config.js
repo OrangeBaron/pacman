@@ -19,7 +19,8 @@ export const DEFAULT_SETTINGS = {
     ghostBaseSpeed: 1.5,
     ghostHuntSpeed: 2.5,
     playerSpeed: 2.0,
-    turnSpeed: 2.0
+    turnSpeed: 2.0,
+    leftHanded: false
 };
 
 // Impostazioni correnti (queste verranno sovrascritte dalla UI del Menu)

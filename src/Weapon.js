@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { STATS } from './config.js';
+import { STATS, CURRENT_SETTINGS } from './config.js';
 import { createPistolMesh, createRifleMesh } from './WeaponModels.js';
 
 export class Weapon {
@@ -10,7 +10,9 @@ export class Weapon {
         // Contenitore vuoto che ospiterà la mesh dell'arma attiva
         this.mesh = new THREE.Group();
         this.camera.add(this.mesh);
-        this.mesh.position.set(0.3, -0.3, -0.6);
+
+        const offsetX = CURRENT_SETTINGS.leftHanded ? -0.3 : 0.3;
+        this.mesh.position.set(offsetX, -0.3, -0.6);
 
         // -- Setup Raycaster per mirare --
         this.raycaster = new THREE.Raycaster();
