@@ -2,7 +2,7 @@
 
 ## Concept e Panoramica
 
-**Pacman VR FPS** è una rivisitazione in prima persona (FPS) a tema dark-survival-horror del celebre arcade. Sviluppato per la Realtà Virtuale utilizzando **WebXR** e **Three.js**, il gioco ti cala all'interno di un labirinto oscuro e claustrofobico generato proceduralmente, dove dovrai raccogliere tutte le monete sfuggendo all'inseguimento di implacabili entità.
+**Pacman VR FPS** è una rivisitazione sparatutto in prima persona (FPS) a tema dark-survival-horror del celebre arcade. Sviluppato per la Realtà Virtuale utilizzando **WebXR** e **Three.js**, il gioco ti cala all'interno di un labirinto oscuro e claustrofobico generato proceduralmente, dove dovrai raccogliere tutte le monete sfuggendo all'inseguimento di implacabili entità.
 
 Il gioco è completamente fruibile sia con i **visori VR** che in modalità **"Flat" tradizionale** su PC (tramite WASD e mouse).
 
