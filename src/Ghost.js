@@ -21,6 +21,11 @@ export class Ghost {
         this.mesh.position.set(startX, 1.0, startZ);
         scene.add(this.mesh);
 
+        this.mesh.userData = { type: 'ghost', entity: this };
+        this.mesh.children.forEach(child => {
+            child.userData = { type: 'ghost', entity: this };
+        });
+
         this.state = 'PATROL'; 
         this.baseSpeed = CURRENT_SETTINGS.ghostBaseSpeed;
         this.huntSpeed = CURRENT_SETTINGS.ghostHuntSpeed; 
@@ -149,6 +154,7 @@ export class Ghost {
     
     getFacingDirection() { return new THREE.Vector3(0, 0, -1).applyQuaternion(this.mesh.quaternion).normalize(); }
 
+    // --- METODO UPDATE PRINCIPALE SNELLITO ---
     update(delta, playerPos) {
         const currentX = this.mesh.position.x;
         const currentZ = this.mesh.position.z;
@@ -157,92 +163,143 @@ export class Ghost {
         
         const hasLineOfSight = this.pathfinder.checkLineOfSight(gridPos.x, gridPos.z, playerGridPos.x, playerGridPos.z);
         
-        const targetFreq = hasLineOfSight ? 22050 : 600;
+        // 1. Gestione Audio (Filtri passa-basso)
+        this.updateAudioFilters(delta, hasLineOfSight);
         
+        // 2. Controllo Visivo (Aggro)
+        this.checkVision(playerPos, gridPos, playerGridPos, hasLineOfSight);
+
+        // 3. Logica di Navigazione sulla Griglia
+        this.updateNavigation(gridPos, currentX, currentZ);
+
+        // 4. Movimento Fisico e Animazione
+        this.moveAndAnimate(delta);
+    }
+
+    // --- METODI HELPER ESTRATTI ---
+
+    updateAudioFilters(delta, hasLineOfSight) {
+        const targetFreq = hasLineOfSight ? 22050 : 600;
         this.filterNormal.frequency.value += (targetFreq - this.filterNormal.frequency.value) * 10 * delta;
         this.filterFast.frequency.value += (targetFreq - this.filterFast.frequency.value) * 10 * delta;
-        
-        if (this.state !== 'STUNNED') {
-            const distToPlayer = this.mesh.position.distanceTo(playerPos);
-            if (distToPlayer < 20.0) {
-                const toPlayer = new THREE.Vector3().subVectors(playerPos, this.mesh.position).normalize();
-                toPlayer.y = 0; 
-                const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.mesh.quaternion);
-                
-                if (forward.dot(toPlayer) > 0.6) { 
-                    if (this.pathfinder.checkLineOfSight(gridPos.x, gridPos.z, playerGridPos.x, playerGridPos.z)) {
-                        this.lastSeenPlayerGrid = { x: playerGridPos.x, z: playerGridPos.z };
-                        this.changeState('HUNT');
-                    }
-                }
+    }
+
+    checkVision(playerPos, gridPos, playerGridPos, hasLineOfSight) {
+        if (this.state === 'STUNNED') return;
+
+        const distToPlayer = this.mesh.position.distanceTo(playerPos);
+        if (distToPlayer < 20.0) {
+            const toPlayer = new THREE.Vector3().subVectors(playerPos, this.mesh.position).normalize();
+            toPlayer.y = 0; // Ignora l'altezza
+            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.mesh.quaternion);
+            
+            // Se il giocatore è nel cono visivo (dot > 0.6) e non ci sono muri in mezzo
+            if (forward.dot(toPlayer) > 0.6 && hasLineOfSight) { 
+                this.lastSeenPlayerGrid = { x: playerGridPos.x, z: playerGridPos.z };
+                this.changeState('HUNT');
             }
         }
+    }
 
+    updateNavigation(gridPos, currentX, currentZ) {
         const cellCenterX = (gridPos.x + this.offsetX) * this.cellSize;
         const cellCenterZ = (gridPos.z + this.offsetZ) * this.cellSize;
         const distToCenter = Math.hypot(currentX - cellCenterX, currentZ - cellCenterZ);
 
+        // Se siamo vicini al centro della cella, prendiamo una decisione
         if (distToCenter < 0.1 && (this.lastDecisionGrid.x !== gridPos.x || this.lastDecisionGrid.z !== gridPos.z)) {
             this.lastDecisionGrid = { x: gridPos.x, z: gridPos.z };
             let decided = false;
 
             if (this.state === 'STUNNED') {
-                const centerX = Math.floor(this.levelMap[0].length / 2);
-                const centerZ = Math.floor(this.levelMap.length / 2);
-
-                if (gridPos.x === centerX && gridPos.z === centerZ) {
-                    this.changeState('PATROL');
-                } else {
-                    const path = this.pathfinder.findPath(gridPos.x, gridPos.z, centerX, centerZ);
-                    if (path && path.length > 0) {
-                        this.mesh.position.set(cellCenterX, this.mesh.position.y, cellCenterZ);
-                        this.direction = path[0]; 
-                        decided = true;
-                    }
-                }
+                decided = this.navigateStunned(gridPos, cellCenterX, cellCenterZ);
             } else if (this.state === 'HUNT' && this.lastSeenPlayerGrid) {
-                const path = this.pathfinder.findPath(gridPos.x, gridPos.z, this.lastSeenPlayerGrid.x, this.lastSeenPlayerGrid.z);
-                if (path && path.length > 0) {
-                    this.mesh.position.set(cellCenterX, this.mesh.position.y, cellCenterZ);
-                    this.direction = path[0]; 
-                    decided = true;
-                } else {
-                    this.lastSeenPlayerGrid = null;
-                    this.changeState('PATROL');
-                }
+                decided = this.navigateHunt(gridPos, cellCenterX, cellCenterZ);
             } else if (this.state === 'INVESTIGATE' && this.investigateTargetGrid) {
-                const path = this.pathfinder.findPath(gridPos.x, gridPos.z, this.investigateTargetGrid.x, this.investigateTargetGrid.z);
-                if (path && path.length > 0) {
-                    this.mesh.position.set(cellCenterX, this.mesh.position.y, cellCenterZ);
-                    this.direction = path[0];
-                    decided = true;
-                } else {
-                    this.investigateTargetGrid = null;
-                    this.changeState('PATROL');
-                }
+                decided = this.navigateInvestigate(gridPos, cellCenterX, cellCenterZ);
             }
 
+            // Fallback: se nessuna decisione specifica è stata presa, pattuglia
             if (!decided) {
-                const validDirs = this.pathfinder.getValidDirections(gridPos.x, gridPos.z);
-                const backwardDir = this.direction.clone().multiplyScalar(-1);
-                let possibleDirs = validDirs.filter(d => d.x !== backwardDir.x || d.z !== backwardDir.z);
-                
-                if (possibleDirs.length === 0) possibleDirs = validDirs; 
-                const currentDirStillValid = possibleDirs.some(d => d.x === this.direction.x && d.z === this.direction.z);
-                
-                if (possibleDirs.length > 1 || !currentDirStillValid) {
-                    this.mesh.position.set(cellCenterX, this.mesh.position.y, cellCenterZ);
-                    this.direction = possibleDirs[Math.floor(Math.random() * possibleDirs.length)];
-                }
+                this.navigatePatrol(gridPos, cellCenterX, cellCenterZ);
             }
         }
+    }
 
+    navigateStunned(gridPos, cellCenterX, cellCenterZ) {
+        const centerX = Math.floor(this.levelMap[0].length / 2);
+        const centerZ = Math.floor(this.levelMap.length / 2);
+
+        if (gridPos.x === centerX && gridPos.z === centerZ) {
+            this.changeState('PATROL');
+            return true;
+        } 
+        
+        const path = this.pathfinder.findPath(gridPos.x, gridPos.z, centerX, centerZ);
+        if (path && path.length > 0) {
+            this.setDirection(path[0], cellCenterX, cellCenterZ);
+            return true;
+        }
+        return false;
+    }
+
+    navigateHunt(gridPos, cellCenterX, cellCenterZ) {
+        const path = this.pathfinder.findPath(gridPos.x, gridPos.z, this.lastSeenPlayerGrid.x, this.lastSeenPlayerGrid.z);
+        if (path && path.length > 0) {
+            this.setDirection(path[0], cellCenterX, cellCenterZ);
+            return true;
+        } 
+        // Perso di vista il giocatore
+        this.lastSeenPlayerGrid = null;
+        this.changeState('PATROL');
+        return false; 
+    }
+
+    navigateInvestigate(gridPos, cellCenterX, cellCenterZ) {
+        const path = this.pathfinder.findPath(gridPos.x, gridPos.z, this.investigateTargetGrid.x, this.investigateTargetGrid.z);
+        if (path && path.length > 0) {
+            this.setDirection(path[0], cellCenterX, cellCenterZ);
+            return true;
+        } 
+        // Arrivati alla fonte del rumore
+        this.investigateTargetGrid = null;
+        this.changeState('PATROL');
+        return false;
+    }
+
+    navigatePatrol(gridPos, cellCenterX, cellCenterZ) {
+        const validDirs = this.pathfinder.getValidDirections(gridPos.x, gridPos.z);
+        const backwardDir = this.direction.clone().multiplyScalar(-1);
+        
+        // Evita di tornare indietro se possibile
+        let possibleDirs = validDirs.filter(d => d.x !== backwardDir.x || d.z !== backwardDir.z);
+        
+        if (possibleDirs.length === 0) possibleDirs = validDirs; 
+        
+        const currentDirStillValid = possibleDirs.some(d => d.x === this.direction.x && d.z === this.direction.z);
+        
+        // Cambia direzione solo agli incroci o se sbatte contro un muro
+        if (possibleDirs.length > 1 || !currentDirStillValid) {
+            this.setDirection(possibleDirs[Math.floor(Math.random() * possibleDirs.length)], cellCenterX, cellCenterZ);
+        }
+    }
+
+    setDirection(newDir, cellCenterX, cellCenterZ) {
+        this.mesh.position.set(cellCenterX, this.mesh.position.y, cellCenterZ);
+        this.direction = newDir;
+    }
+
+    moveAndAnimate(delta) {
+        // Spostamento in avanti
         this.mesh.position.add(this.direction.clone().multiplyScalar(this.speed * delta));
+        
+        // Rotazione morbida
         const targetLookPos = this.mesh.position.clone().add(this.direction);
         const dummyMatrix = new THREE.Matrix4().lookAt(this.mesh.position, targetLookPos, new THREE.Vector3(0, 1, 0));
         this.targetQuaternion.setFromRotationMatrix(dummyMatrix);
         this.mesh.quaternion.slerp(this.targetQuaternion, 10 * delta);
         
+        // Fluttuazione organica
         const time = Date.now() * 0.004; 
         this.mesh.position.y = 1.0 + Math.sin(time) * 0.1;
     }

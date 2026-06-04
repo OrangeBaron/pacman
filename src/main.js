@@ -197,86 +197,35 @@ function animate() {
 
         gameManager.update(playerWorldPos);
 
-        // --- AGGIORNAMENTO SHADERS DEGLI AMBIENTI ---
-        environment.shaderUniforms.u_playerPosition.value.copy(playerWorldPos);
+        // --- GESTIONE DELLA TORCIA E AGGIORNAMENTO LUCI ---
+        let flashlightPos = null;
+        let flashlightDir = null;
 
-        // GESTIONE DELLA TORCIA (FLASHLIGHT)
         if (weapon && weapon.mesh) {
-            const flashlightPos = new THREE.Vector3();
-            const flashlightDir = new THREE.Vector3(0, 0, -1);
-
-            // Otteniamo la posizione globale dell'arma
-            weapon.mesh.getWorldPosition(flashlightPos);
-            // La luce parte leggermente più avanti rispetto all'arma per evitare auto-ombreggiature
+            flashlightPos = new THREE.Vector3();
+            flashlightDir = new THREE.Vector3(0, 0, -1);
             
-            // Otteniamo il vettore frontale dell'arma rispetto al mondo (spazio globale)
+            // Otteniamo la posizione globale e la direzione dell'arma
+            weapon.mesh.getWorldPosition(flashlightPos);
             flashlightDir.transformDirection(weapon.mesh.matrixWorld).normalize();
             
-            // Spostiamo la posizione della luce leggermente in avanti nella direzione della canna
+            // Spostiamo la luce leggermente in avanti
             flashlightPos.addScaledVector(flashlightDir, 0.3);
 
-            environment.shaderUniforms.u_flashlightPos.value.copy(flashlightPos);
-            environment.shaderUniforms.u_flashlightDir.value.copy(flashlightDir);
-
             if (dustManager) {
-                dustManager.update(
-                    clock.getElapsedTime(), 
-                    flashlightPos, 
-                    flashlightDir
-                );
+                dustManager.update(clock.getElapsedTime(), flashlightPos, flashlightDir);
             }
         }
 
-        // --- GESTIONE DINAMICA LUCI ARMI (Le 2 più vicine) ---
-        const weaponsWithDistance = weaponManager.pickups.map(pickup => {
-            return {
-                pickup: pickup,
-                sqDistance: pickup.position.distanceToSquared(playerWorldPos)
-            };
-        });
-
-        // Ordiniamo le armi dalla più vicina alla più lontana
-        weaponsWithDistance.sort((a, b) => a.sqDistance - b.sqDistance);
-
-        // Estraiamo solo le prime 2
-        const closestWeapons = weaponsWithDistance.slice(0, 2).map(item => item.pickup);
-
-        // Passiamo allo shader le posizioni (massimo 2)
-        for (let i = 0; i < 2; i++) {
-            if (i < closestWeapons.length) {
-                environment.shaderUniforms.u_weaponPositions.value[i].copy(closestWeapons[i].position);
-            } else {
-                environment.shaderUniforms.u_weaponPositions.value[i].set(0, -100, 0); // Nascondi
-            }
-        }
-
-        // --- GESTIONE DINAMICA DELLE LUCI (I 4 Fantasmi più vicini) ---
-        // 1. Mappiamo i fantasmi calcolando il quadrato della loro distanza dal giocatore
-        const ghostsWithDistance = ghosts.map(ghost => {
-            return {
-                ghost: ghost,
-                sqDistance: ghost.mesh.position.distanceToSquared(playerWorldPos)
-            };
-        });
-
-        // 2. Ordiniamo l'array dal fantasma più vicino a quello più lontano
-        ghostsWithDistance.sort((a, b) => a.sqDistance - b.sqDistance);
-
-        // 3. Estraiamo solo le entità (i primi 4)
-        const closestGhosts = ghostsWithDistance.slice(0, 4).map(item => item.ghost);
-
-        // 4. Passiamo i 4 fantasmi più vicini allo shader
-        for (let i = 0; i < 4; i++) {
-            if (i < closestGhosts.length) {
-                environment.shaderUniforms.u_ghostPositions.value[i].copy(closestGhosts[i].mesh.position);
-                environment.shaderUniforms.u_ghostPositions.value[i].y += 0.2; 
-                environment.shaderUniforms.u_ghostDirections.value[i].copy(closestGhosts[i].getFacingDirection());
-                environment.shaderUniforms.u_ghostColors.value[i].copy(closestGhosts[i].lightColor);
-            } else {
-                environment.shaderUniforms.u_ghostPositions.value[i].set(0, -100, 0); // Nascondi
-            }
-        }
-    }
+        // Deleghiamo tutti i calcoli grafici pesanti e l'aggiornamento degli shader all'ambiente
+        environment.updateLighting(
+            playerWorldPos, 
+            flashlightPos, 
+            flashlightDir, 
+            ghosts, 
+            weaponManager.pickups
+        );
+    } // <-- Fine dell'if (gameManager && gameManager.gameStarted && !gameManager.isGameOver)
 
     renderer.render(scene, camera);
 }

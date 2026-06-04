@@ -9,6 +9,8 @@ export class Weapon {
         
         // Contenitore vuoto che ospiterà la mesh dell'arma attiva
         this.mesh = new THREE.Group();
+        this.mesh.userData = { type: 'weapon' };
+
         this.camera.add(this.mesh);
 
         const offsetX = CURRENT_SETTINGS.leftHanded ? -0.3 : 0.3;
@@ -98,43 +100,28 @@ export class Weapon {
         const hitGhosts = new Set();
         
         for (let i = 0; i < intersects.length; i++) {
-            const hitMesh = intersects[i].object;
+            const hitObject = intersects[i].object;
+            const hitData = hitObject.userData;
             
-            // 1. Ignora il pulviscolo (è un oggetto di tipo Points, non una Mesh)
-            if (hitMesh.isPoints) continue;
+            // 1. Ignora il pulviscolo (Points) o l'arma stessa (se un figlio non avesse ereditato il tag, controlliamo l'albero)
+            if (hitObject.isPoints || hitData.type === 'weapon') continue;
 
-            // 2. Ignora l'arma stessa che il giocatore ha in mano
-            let isWeapon = false;
-            let obj = hitMesh;
-            while(obj) {
-                if (obj === this.mesh) { isWeapon = true; break; }
-                obj = obj.parent;
-            }
-            if (isWeapon) continue;
-
-            // 3. Controlla se abbiamo colpito un fantasma
-            const hitGhost = ghosts.find(g => g.mesh === hitMesh || g.mesh.children.includes(hitMesh));
-            
-            if (hitGhost) {
-                // Se è un fantasma non ancora colpito da questo singolo sparo
+            // 2. Abbiamo colpito un fantasma?
+            if (hitData.type === 'ghost') {
+                const hitGhost = hitData.entity; // Recuperiamo l'istanza direttamente!
                 if (!hitGhosts.has(hitGhost)) {
                     hitGhost.takeDamage();
                     hitGhosts.add(hitGhost);
                     STATS.shotsHit++;
-                    // IMPORTANTE: Non facciamo 'break' qui! In questo modo il ciclo
-                    // continua e il raggio "trapassa" il fantasma per colpire 
-                    // eventuali altri fantasmi dietro di lui.
+                    // Non facciamo break: il proiettile può trapassare e colpire altri fantasmi dietro!
                 }
             } 
-            // 4. Se non è un fantasma, controlla se è l'ambiente (muri, pavimento, soffitto)
-            // Sappiamo che l'ambiente è composto da Mesh con ShaderMaterial
-            else if (hitMesh.isMesh && hitMesh.material && hitMesh.material.type === 'ShaderMaterial') {
-                // Abbiamo colpito una parete solida. Il proiettile si ferma.
-                break;
+            // 3. Abbiamo colpito un muro solido?
+            else if (hitData.type === 'wall') {
+                break; // Il proiettile si ferma contro il muro
             }
             
-            // 5. Qualsiasi altra cosa (monete, armi a terra) viene ignorata 
-            // lasciando che il ciclo prosegua verso il prossimo oggetto intersecato.
+            // 4. Qualsiasi altra cosa (pavimenti, monete, armi a terra non taggate) viene ignorata.
         }
 
         // 4. PROPAGAZIONE DEL RUMORE
