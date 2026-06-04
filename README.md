@@ -73,7 +73,7 @@ Tra le caratteristiche considerate o programmate per i prossimi aggiornamenti tr
 - [ ] **Oggetti di Gioco:** Sostituzione delle monete con vari tipi di caramelle.
 - [ ] **Animazioni:** Respiro del fucile (Weapon Sway & Bobbing) e pulsazione delle monete.
 - [ ] **Shader/Luci e Ombre:** Flash dello sparo, scintille all'impatto dei protiettili.
-- [ ] **Effetti Visivi:** Effetto "Paura" diegetico, con vignettatura o effetto "disturbo VHS".
+- [ ] **Effetti Visivi:** Effetto "Paura" con vignettatura e/o effetto "disturbo VHS".
 - [ ] **Audio:** Sostituzione delle musiche e degli effetti sonori.
 - [ ] **Gameplay:** Introduzione di nuove tipologie di nemici o power-up.
 - [ ] **Mobile/Tablet:** Integrazione dei comandi a schermo per dispositivi touch.
