@@ -19,9 +19,9 @@ Il tuo scopo è esplorare il labirinto per **raccogliere tutte le monete** spars
 Prima di ogni avvio, un Menu Principale permette di generare partite uniche regolando:
 
 - Dimensione del labirinto.
-- Quantità di fantasmi e di armi speciali spawnate.
-- Velocità di movimento del giocatore e velocità di rotazione per il visore VR.
-- Velocità di base e di caccia dei fantasmi.
+- Numero di fantasmi.
+- Numero di armi speciali.
+- Modalità mancino.
 
 ### 🤫 Meccaniche Stealth e Audio
 
